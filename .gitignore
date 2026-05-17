@@ -1,0 +1,20 @@
+# Environment files
+.env
+agents/*/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.hypothesis/
+
+# ADK
+.adk/
+agents/*/.adk/
+app/agent/.adk/
+
+# Local DB
+*.db
+*.sqlite
+*.sqlite3

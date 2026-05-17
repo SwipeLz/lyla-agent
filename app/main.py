@@ -1,0 +1,47 @@
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+
+from app.api import agent, dashboard, devices, health
+from app.api._errors import register_exception_handlers
+from app.config import settings
+from app.scheduler.lifecycle import start_scheduler, stop_scheduler
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI lifespan: start the Reminder Scheduler on startup (gated by
+    ``settings.scheduler_enabled``) and shut it down on application
+    shutdown.
+
+    The scheduler instance is stored on ``app.state.scheduler`` so
+    ``stop_scheduler`` (and any other shutdown logic) can locate it. When
+    ``settings.scheduler_enabled`` is ``False`` no scheduler is created
+    and ``app.state.scheduler`` is left as ``None``.
+    """
+    if settings.scheduler_enabled:
+        app.state.scheduler = start_scheduler(app)
+    else:
+        app.state.scheduler = None
+    try:
+        yield
+    finally:
+        stop_scheduler(app)
+
+
+app = FastAPI(
+    title="Taskbot Backend",
+    version="0.1.0",
+    lifespan=lifespan,
+)
+
+# Register global Service Layer exception handlers (Req 12.7, 13.6, 13.7).
+# Done before including routers so every endpoint inherits the mapping
+# from NotFoundError/ValidationError/PermissionDeniedError to
+# HTTP 404/422/403 with a uniform ``{"detail": "..."}`` body.
+register_exception_handlers(app)
+
+app.include_router(health.router, tags=["Health"])
+app.include_router(agent.router)
+app.include_router(devices.router)
+app.include_router(dashboard.router)

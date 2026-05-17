@@ -1,0 +1,49 @@
+{
+  "//": "Workspace-level Kiro settings. Committed to the repo so any account that clones gets the same trusted commands. Override per-user by editing %APPDATA%\\Kiro\\User\\settings.json (user wins for personal additions, workspace wins for project rules).",
+
+  "kiroAgent.trustedCommands": [
+    "python *",
+    "python -m *",
+    ".venv\\Scripts\\python.exe *",
+    ".\\.venv\\Scripts\\python.exe *",
+    ".venv\\Scripts\\python *",
+    "pip *",
+    "pip install *",
+    "pip show *",
+    "pytest *",
+    "python -m pytest *",
+    "alembic *",
+    "alembic upgrade *",
+    "alembic downgrade *",
+    "alembic revision *",
+    "alembic current",
+    "alembic history *",
+    "uvicorn *",
+    "adk *",
+    "adk web *",
+    "adk run *",
+    "adk api_server *",
+    "git *",
+    "Get-ChildItem *",
+    "Get-Item *",
+    "Get-Content *",
+    "Get-Process *",
+    "Select-String *",
+    "ConvertFrom-Json *",
+    "ConvertTo-Json *",
+    "dir *",
+    "type *",
+    "where *",
+    "where.exe *",
+    "findstr *",
+    "if *",
+    "$path *",
+    "powershell *",
+    "$env:GOOGLE_API_KEY=\"\"; *"
+  ],
+
+  "kiroAgent.trustedTools": [
+    "web_fetch",
+    "remote_web_search"
+  ]
+}
