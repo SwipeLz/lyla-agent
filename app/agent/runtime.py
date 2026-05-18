@@ -148,8 +148,11 @@ async def _run_real(
     """
     del timezone  # MVP: not yet threaded through to the agent prompt.
 
-    # Defer Google SDK imports until the real-agent path actually runs.
-    # See module docstring for why these CANNOT be at module top level.
+    import os
+
+    if default_settings.google_api_key and not os.environ.get("GOOGLE_API_KEY"):
+        os.environ["GOOGLE_API_KEY"] = default_settings.google_api_key
+
     from google.adk.runners import Runner
     from google.adk.sessions import InMemorySessionService
     from google.genai import types

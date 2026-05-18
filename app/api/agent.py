@@ -23,8 +23,14 @@ It mediates four concerns:
 Router mounting
 ---------------
 The router has no ``prefix``; the route path itself is ``/agent/text``.
-``app/main.py`` includes it via ``app.include_router(agent.router)``
-(task 6.3, separate task).
+``app/main.py`` includes it via ``app.include_router(agent.router)``.
+
+Phase 10 note: the shared invocation flow lives in
+:func:`app.api._agent_helpers.process_agent_text_command` so
+:func:`app.api.audio.post_agent_audio` can reuse it. This handler keeps
+its original inline form because existing tests monkeypatch
+``app.api.agent.run_text`` directly; routing through the helper would
+break that patch surface (revert documented in the Phase 10 plan).
 """
 from __future__ import annotations
 
@@ -47,23 +53,7 @@ async def post_agent_text(
     payload: AgentTextRequest,
     db: Session = Depends(get_db),
 ) -> AgentTextResponse:
-    """Run the Agent Runtime against ``payload.text`` and persist a log row.
-
-    Order of operations is deliberate:
-
-    1. Existence checks **before** invoking the runtime so we never
-       waste an LLM call on a request that we know is invalid (Req
-       5.3, 5.4 also require not invoking the runtime in those cases).
-    2. ``run_text`` is wrapped in a broad ``try/except`` because Req
-       6.6 demands a graceful 500 + error-status log row regardless of
-       which layer raised. We re-raise as ``HTTPException(500, ...)``
-       with a generic detail to avoid leaking internal messages to
-       clients.
-    3. The success-path log row is persisted *after* a successful
-       runtime call so its ``parsed_actions``/``response_text`` exactly
-       mirror what the client sees (Req 6.2, 6.4).
-    """
-    # Req 5.3: unknown user_id → 404 without invoking the runtime.
+    """Run the Agent Runtime against ``payload.text`` and persist a log row."""
     user = db.query(User).filter(User.id == payload.user_id).one_or_none()
     if user is None:
         raise HTTPException(
@@ -71,10 +61,6 @@ async def post_agent_text(
             detail="User tidak ditemukan",
         )
 
-    # Req 5.4: when device_id is supplied but no Device matches → 404.
-    # When device_id is None the agent runs in "no paired device" mode
-    # and ``send_device_command`` short-circuits inside the tool factory
-    # (Req 2.6); no lookup is needed.
     if payload.device_id is not None:
         device = (
             db.query(Device).filter(Device.id == payload.device_id).one_or_none()
@@ -85,12 +71,8 @@ async def post_agent_text(
                 detail="Device tidak ditemukan",
             )
 
-    # Req 5.5: prefer the request's timezone if provided non-empty;
-    # otherwise fall back to the application default.
     tz = payload.timezone if payload.timezone else settings.timezone
 
-    # Req 6.1: invoke the Agent Runtime exactly once.
-    # Req 6.6: any unhandled exception → 500 + persist error log row.
     try:
         result = await run_text(
             db,
@@ -99,15 +81,10 @@ async def post_agent_text(
             text=payload.text,
             timezone=tz,
         )
-    except Exception as exc:  # noqa: BLE001 — broad on purpose per Req 6.6
-        # Persist an error log row so the failure is observable. We
-        # deliberately use a fresh transactional context: if the runtime
-        # left ``db`` in a dirty state, rollback first so the log insert
-        # is not poisoned. ``log_service.create_voice_command_log``
-        # itself does ``db.commit()``.
+    except Exception as exc:  # noqa: BLE001
         try:
             db.rollback()
-        except Exception:  # noqa: BLE001 — best-effort cleanup
+        except Exception:  # noqa: BLE001
             pass
         try:
             log_service.create_voice_command_log(
@@ -120,16 +97,12 @@ async def post_agent_text(
                 status="error",
             )
         except Exception:  # noqa: BLE001
-            # Never let a logging failure mask the original 500 response.
             pass
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Agent runtime error",
         )
 
-    # Req 6.2: persist exactly one VoiceCommandLog row mirroring the
-    # response. Req 6.4: ``actions`` is forwarded as-is so the log and
-    # the response agree.
     log_service.create_voice_command_log(
         db,
         user_id=payload.user_id,
@@ -140,10 +113,6 @@ async def post_agent_text(
         status=result.status,
     )
 
-    # Req 6.3: 200 OK with {reply, actions, device_feedback}. Req 6.5:
-    # ``device_feedback`` was already chosen by the runtime via
-    # ``_pick_device_feedback`` (last successful device_command Tool
-    # Result Dict, or None).
     return AgentTextResponse(
         reply=result.reply,
         actions=result.actions,

@@ -40,20 +40,31 @@
 - **Main Steps:** Create command tables, implement polling and acknowledgment endpoints.
 - **Milestone:** `/devices/{device_code}/commands/pending` returns queued commands.
 
-## Phase 8: Dashboard API (Current)
+## Phase 8: Dashboard API
 - **Objective:** Expose data for the frontend dashboard.
 - **Main Steps:** Create read-only endpoints for tasks, expenses, and summaries.
 - **Milestone:** Dashboard API fully functional.
 
+## Phase 8.5: Integration Smoke Test (Deferred)
+- **Status:** Spec written at `.kiro/specs/phase-8-5-integration-smoke-test/`; implementation deferred until after Phase 9.
+- **Reason:** Frontend Phase 9 prioritized for demo readiness.
+
 ## Phase 9: Dashboard Frontend
 - **Objective:** Build the web dashboard.
-- **Main Steps:** Create frontend application to consume Dashboard APIs.
-- **Milestone:** User can view tasks and expenses on the web.
+- **Main Steps:** Vite + React + TypeScript + Tailwind SPA at `frontend/`. Consumes existing FastAPI dashboard and `/agent/text` endpoints. No Next.js, no SSR, no BFF.
+- **Milestone:** User can view summary, tasks, expenses, voice command logs, and devices, plus run agent commands manually from the browser.
 
-## Phase 10: Audio Backend
-- **Objective:** Add voice processing capabilities.
-- **Main Steps:** Integrate STT (Speech-to-Text) and TTS (Text-to-Speech) services, create `/agent/audio` endpoint.
-- **Milestone:** Backend can receive audio, process it, and return audio responses.
+## Phase 10: Audio Backend (Current)
+- **Status:** Hermetic foundation shipped. `POST /agent/audio` accepts multipart upload, fake STT returns deterministic transcript, fake TTS emits silent WAV via stdlib `wave`. Real STT/TTS provider deliberately deferred.
+- **Main Steps:** `app/audio/` package with provider seam (`SttProvider`/`TtsProvider` Protocols), `app/utils/audio_validation.py`, `POST /agent/audio` endpoint, AR7 hermeticity property.
+- **Milestone:** Backend audio path testable end-to-end offline; 230 tests pass; ready for a real provider drop-in.
+- **Runbook:** [`docs/AUDIO_BACKEND.md`](AUDIO_BACKEND.md).
+- **Summary:** [`docs/PHASE_10_SUMMARY.md`](PHASE_10_SUMMARY.md).
+
+## Phase 10.5: Real STT/TTS Provider (Next)
+- **Objective:** Plug a real STT (e.g. Google Cloud Speech) and TTS provider behind the existing `AUDIO_STT_MODE` / `AUDIO_TTS_MODE` settings.
+- **Main Steps:** Implement `SttProvider`/`TtsProvider` for the chosen vendor, add provider settings, keep AR7 hermeticity for the fake branch.
+- **Milestone:** Live audio input/output works end-to-end against a real Bahasa Indonesia voice service.
 
 ## Phase 11: ESP Prototype
 - **Objective:** Initial hardware setup.

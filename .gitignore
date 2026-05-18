@@ -2,6 +2,10 @@
 .env
 agents/*/.env
 
+# Python virtualenvs
+.venv/
+venv/
+
 # Python
 __pycache__/
 *.py[cod]

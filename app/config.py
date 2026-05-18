@@ -41,6 +41,17 @@ class Settings(BaseSettings):
     # dashboard_token: used only when dashboard_auth_mode == "shared_header"
     dashboard_token: str = ""
 
+    # Phase 10 audio settings.
+    # MAX_AUDIO_UPLOAD_MB is decimal (10 MB = 10_000_000 bytes).
+    # AUDIO_STT_MODE / AUDIO_TTS_MODE only support "fake" in Phase 10;
+    # real provider modes (e.g. "google", "openai") are deferred.
+    audio_stt_mode: str = "fake"
+    audio_tts_mode: str = "fake"
+    fake_stt_transcript: str = "catat makan siang 20000"
+    max_audio_upload_mb: int = 10
+    fake_tts_format: str = "wav"
+    fake_tts_sample_rate: int = 16000
+
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",

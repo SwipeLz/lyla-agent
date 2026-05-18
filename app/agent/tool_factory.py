@@ -148,9 +148,12 @@ def build_tools(db, user_id, device_id) -> list[Callable[..., dict]]:
     create_expense.__name__ = "create_expense"
     create_expense.__doc__ = (
         "Catat pengeluaran pribadi pengguna saat ini. "
-        "Argumen: amount (int rupiah, > 0, wajib); category (str|None); "
-        "note (str|None); spent_at (string ISO 8601 dengan zona waktu, "
-        "opsional)."
+        "Argumen: amount (int rupiah penuh, > 0, wajib; LLM HARUS "
+        "mengonversi shorthand seperti '10k'/'10rb'/'10 ribu' menjadi "
+        "10000 dan '10jt'/'10 juta' menjadi 10000000 SEBELUM memanggil "
+        "tool — jangan kirim 10 ketika pengguna bilang '10k'); "
+        "category (str|None); note (str|None); spent_at (string ISO "
+        "8601 dengan zona waktu, opsional)."
     )
 
     def set_reminder(

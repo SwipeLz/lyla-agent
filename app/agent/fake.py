@@ -49,9 +49,49 @@ from typing import Any, Callable, Iterable
 
 from app.agent.result import AgentRunResult, _pick_device_feedback
 
-# Pre-compiled patterns. ``\d+`` captures the first run of digits; we
-# accept any positive integer because expenses are stored as ``int`` IDR.
-_AMOUNT_RE = re.compile(r"\d+")
+# Amount parsing supports three Indonesian conventions, in order:
+#   1. Shorthand:        "10k" / "10rb" / "10 ribu" -> 10_000
+#                        "10jt" / "10 juta"          -> 10_000_000
+#   2. Thousand-grouped: "10.000" / "1.000.000"      -> 10_000 / 1_000_000
+#                        (titik adalah pemisah ribuan, BUKAN desimal)
+#   3. Bare integer:     "20000"                     -> 20_000
+_AMOUNT_SHORTHAND_RE = re.compile(
+    r"(?P<num>\d+(?:[.,]\d+)?)\s*(?P<unit>k|rb|ribu|jt|juta)\b",
+    re.IGNORECASE,
+)
+_AMOUNT_THOUSANDS_RE = re.compile(r"\d{1,3}(?:\.\d{3})+")
+_AMOUNT_BARE_RE = re.compile(r"\d+")
+
+
+def _parse_amount(text: str) -> int | None:
+    """Extract a positive integer rupiah amount from free Indonesian text.
+
+    Returns None when no positive integer is detectable. The function
+    deliberately picks the first match in the priority order documented
+    above so that "makan 10k bukan 5000" resolves to 10_000, not 5000.
+    """
+    match = _AMOUNT_SHORTHAND_RE.search(text)
+    if match is not None:
+        try:
+            base = float(match.group("num").replace(",", "."))
+        except ValueError:
+            base = 0.0
+        unit = match.group("unit").lower()
+        multiplier = 1_000 if unit in {"k", "rb", "ribu"} else 1_000_000
+        amount = int(base * multiplier)
+        if amount > 0:
+            return amount
+    match = _AMOUNT_THOUSANDS_RE.search(text)
+    if match is not None:
+        amount = int(match.group(0).replace(".", ""))
+        if amount > 0:
+            return amount
+    match = _AMOUNT_BARE_RE.search(text)
+    if match is not None:
+        amount = int(match.group(0))
+        if amount > 0:
+            return amount
+    return None
 
 _EXPENSE_KEYWORDS: tuple[str, ...] = ("makan", "beli", "bayar")
 _REMINDER_KEYWORDS: tuple[str, ...] = ("ingatkan", "reminder")
@@ -138,10 +178,9 @@ async def _run_fake(
 
     # 1. Expense — strongest signal: a keyword AND a positive integer.
     if _contains_any(text_lower, _EXPENSE_KEYWORDS):
-        amount_match = _AMOUNT_RE.search(text)
+        amount = _parse_amount(text)
         create_expense = tools_map.get("create_expense")
-        if amount_match is not None and create_expense is not None:
-            amount = int(amount_match.group(0))
+        if amount is not None and create_expense is not None:
             result = create_expense(amount=amount, note=text)
             actions.append(result)
             return AgentRunResult(

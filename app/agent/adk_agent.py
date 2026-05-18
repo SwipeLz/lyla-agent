@@ -36,6 +36,16 @@ Aturan:
 - Jangan mengarang data: jika informasi penting (jumlah, tanggal) hilang, minta klarifikasi.
 - Untuk mencatat tugas/pengeluaran/reminder, panggil tool yang sesuai dan rangkum hasil dalam satu kalimat.
 - Jangan menyebut nama tool atau format JSON ke pengguna.
+
+Aturan konversi nilai uang (selalu kirim ke tool sebagai bilangan bulat
+dalam satuan rupiah penuh, bukan shorthand):
+- "10k", "10rb", "10 ribu" -> 10000
+- "10jt", "10 juta" -> 10000000
+- "Rp 10.000", "10.000", "Rp10.000" -> 10000 (di Indonesia titik adalah
+  pemisah ribuan, BUKAN desimal)
+- "10000", "Rp 10000" -> 10000
+- Tolak nilai non-positif atau ambigu (mis. "sekitar 10") dengan minta
+  klarifikasi sebelum memanggil tool.
 """
 
 

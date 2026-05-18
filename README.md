@@ -14,7 +14,7 @@ The Minimum Viable Product (MVP) focuses on a text-command-based backend system 
 ## Development Phases Summary
 The project is divided into 14 phases, starting from backend skeleton and database design, progressing to the Google ADK agent integration, and eventually adding the dashboard, hardware prototype, audio processing, and WhatsApp notifications.
 
-**Current Phase:** Phase 3 (Service Layer & Tool Wrappers) — implemented and tested.
+**Current Phase:** Phase 10 (Audio Backend Foundation) — `POST /agent/audio` accepts multipart upload, fake STT returns deterministic transcript, fake TTS emits silent WAV via stdlib. Phases 0–9 complete with 230/230 tests passing. Real STT/TTS provider deferred to Phase 10.5.
 
 ## Backend Development
 
@@ -139,3 +139,117 @@ Kode error yang relevan:
 - `422` — `text` kosong/whitespace atau body tidak valid.
 - `404` — `user_id` atau `device_id` tidak ditemukan; agent tidak dipanggil.
 - `500` — Agent Runtime raise; endpoint tetap mencatat `VoiceCommandLog` dengan `status="error"` dan tidak membocorkan stack trace ke client.
+
+## Frontend Dashboard (Phase 9)
+
+The dashboard SPA at `frontend/` consumes the backend above. It uses
+**Vite + React + TypeScript + Tailwind**, *not* Next.js. No SSR, no
+server actions, no backend-for-frontend layer — the browser talks to
+FastAPI directly.
+
+### Run the frontend
+
+```bash
+cd frontend
+cp .env.example .env
+# Fill in VITE_DEMO_USER_ID and VITE_DEMO_DEVICE_ID from `python -m scripts.seed_dev`
+npm install
+npm run dev
+```
+
+Open <http://localhost:5173>. The Vite dev server proxies `/agent`,
+`/dashboard`, `/devices`, and `/healthz` to `http://127.0.0.1:8000` so
+no CORS configuration is required during development.
+
+### Frontend `.env` keys
+
+| Key | Required | Purpose |
+|---|---|---|
+| `VITE_API_BASE_URL` | optional | Origin of FastAPI. Default `http://127.0.0.1:8000`. |
+| `VITE_DEMO_USER_ID` | **yes** | UUID printed by `python -m scripts.seed_dev`. |
+| `VITE_DEMO_DEVICE_ID` | optional | UUID for demo device. Without it, AgentCommandBox warns and skips device feedback. |
+| `VITE_DASHBOARD_TOKEN` | optional | Set only when backend uses `DASHBOARD_AUTH_MODE=shared_header`. |
+
+### Test the Agent Command Box
+
+On the **Ringkasan** page, type `catat makan siang 20000` and click
+**Jalankan**. The dashboard should display the agent reply, device
+feedback (if `VITE_DEMO_DEVICE_ID` is set), and refresh the summary
+stat cards automatically.
+
+### Building for production
+
+```bash
+cd frontend
+npm run build
+```
+
+Output goes to `frontend/dist/`. Serve with any static file server.
+For production deployment configure FastAPI `CORSMiddleware` or put
+both behind a reverse proxy on the same origin (out of scope for
+Phase 9).
+
+Full runbook: [`docs/FRONTEND_DASHBOARD.md`](docs/FRONTEND_DASHBOARD.md).
+Phase summary: [`docs/PHASE_9_SUMMARY.md`](docs/PHASE_9_SUMMARY.md).
+
+### What's intentionally NOT in Phase 9
+
+- Phase 8.5 backend smoke test (deferred).
+- Audio capture / STT / TTS.
+- Real WhatsApp integration.
+- ESP32 firmware.
+- JWT/OAuth/session auth (dashboard auth stays at MVP `none`).
+- Next.js, Remix, Angular, Vue, SvelteKit.
+
+## Audio Backend (Phase 10)
+
+`POST /agent/audio` accepts a multipart audio upload, runs a **fake**
+STT to produce a deterministic transcript, dispatches the transcript
+through the existing agent flow, and returns the standard
+`reply`/`actions`/`device_feedback` plus transcription, audio, and TTS
+metadata. **Phase 10 is hermetic-only** — no real STT/TTS provider is
+integrated; provider selection is deferred to Phase 10.5.
+
+### Quick example
+
+```bash
+curl -X POST http://127.0.0.1:8765/agent/audio \
+  -F "user_id=<demo-user-uuid>" \
+  -F "device_id=<demo-device-uuid>" \
+  -F "timezone=Asia/Jakarta" \
+  -F "file=@sample.wav"
+```
+
+Or via the in-process CLI (mirrors `scripts/run_agent_text.py`):
+
+```powershell
+$env:TASKBOT_USER_ID = "<demo-user-uuid>"
+$env:TASKBOT_DEVICE_ID = "<demo-device-uuid>"
+python -m scripts.run_agent_audio path\to\sample.wav
+```
+
+### Settings (`.env`)
+
+```
+AUDIO_STT_MODE=fake
+AUDIO_TTS_MODE=fake
+FAKE_STT_TRANSCRIPT=catat makan siang 20000
+MAX_AUDIO_UPLOAD_MB=10
+FAKE_TTS_FORMAT=wav
+FAKE_TTS_SAMPLE_RATE=16000
+```
+
+`MAX_AUDIO_UPLOAD_MB` is decimal MB (10 MB = 10_000_000 bytes).
+
+Full runbook: [`docs/AUDIO_BACKEND.md`](docs/AUDIO_BACKEND.md).
+Phase summary: [`docs/PHASE_10_SUMMARY.md`](docs/PHASE_10_SUMMARY.md).
+
+### What's intentionally NOT in Phase 10
+
+- Real STT/TTS provider (Google Cloud Speech, OpenAI Whisper,
+  ElevenLabs, ADK Live Audio API, etc.).
+- Provider SDKs in `requirements.txt`.
+- Streaming, WebSocket audio, wake-word.
+- ESP32 firmware (INMP441/I2S, MAX98357A).
+- Frontend microphone UI.
+- Binary TTS audio fetch endpoint (planned for Phase 11+).
