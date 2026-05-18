@@ -22,3 +22,11 @@ app/agent/.adk/
 *.db
 *.sqlite
 *.sqlite3
+
+# Phase 11 measurement / probe artifacts
+.uvicorn.out
+.uvicorn.err
+.uvicorn.pid
+sample.wav
+test_command.wav
+gemini_tts_probe_*.wav

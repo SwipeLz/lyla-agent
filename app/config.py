@@ -43,14 +43,20 @@ class Settings(BaseSettings):
 
     # Phase 10 audio settings.
     # MAX_AUDIO_UPLOAD_MB is decimal (10 MB = 10_000_000 bytes).
-    # AUDIO_STT_MODE / AUDIO_TTS_MODE only support "fake" in Phase 10;
-    # real provider modes (e.g. "google", "openai") are deferred.
+    # AUDIO_STT_MODE / AUDIO_TTS_MODE accept "fake" or "gemini".
     audio_stt_mode: str = "fake"
     audio_tts_mode: str = "fake"
     fake_stt_transcript: str = "catat makan siang 20000"
     max_audio_upload_mb: int = 10
     fake_tts_format: str = "wav"
     fake_tts_sample_rate: int = 16000
+
+    # Phase 11 real-provider settings.
+    # Used only when AUDIO_STT_MODE == "gemini" or AUDIO_TTS_MODE == "gemini".
+    audio_stt_provider_model: str = "gemini-3-flash-preview"
+    audio_tts_provider_model: str = "gemini-3.1-flash-tts-preview"
+    audio_tts_voice: str = "Leda"
+    tts_cache_ttl_seconds: int = 300
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),

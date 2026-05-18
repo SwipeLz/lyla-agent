@@ -12,6 +12,7 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app.api._agent_helpers import process_agent_text_command
+from app.api._audio_directive import classify_directive
 from app.audio._seam import ConfigurationError
 from app.audio.stt import transcribe_audio
 from app.audio.tts import synthesize_text
@@ -108,4 +109,8 @@ async def post_agent_audio(
             size_bytes=metadata.size_bytes,
         ),
         tts=tts_info,
+        directive=classify_directive(
+            actions=result.actions,
+            reply=result.reply,
+        ),
     )
