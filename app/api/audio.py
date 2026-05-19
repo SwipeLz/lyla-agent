@@ -16,11 +16,13 @@ from app.api._audio_directive import classify_directive
 from app.audio._seam import ConfigurationError
 from app.audio.stt import transcribe_audio
 from app.audio.tts import synthesize_text
+from app.audio.tts_cache import tts_cache
 from app.config import settings
 from app.db import get_db
 from app.schemas.audio import (
     AgentAudioResponse,
     AudioMetadataOut,
+    DirectiveOut,
     FakeTTSInfoOut,
     TranscriptionInfoOut,
 )
@@ -69,26 +71,61 @@ async def post_agent_audio(
             detail="Audio transcription failed",
         )
 
-    result = await process_agent_text_command(
+    invocation = await process_agent_text_command(
         db,
         user_id=user_id,
         text=transcription.text,
         device_id=device_id,
         timezone=timezone,
     )
+    result = invocation.result
+    log_id = invocation.log_id
 
-    try:
-        tts_result = synthesize_text(transcription.text)
+    directive = classify_directive(
+        actions=result.actions,
+        reply=result.reply,
+    )
+
+    should_synthesize_tts = (
+        settings.audio_tts_mode == "fake"
+        or directive.audio_code == "fallback_tts"
+    )
+
+    if should_synthesize_tts:
+        try:
+            tts_result = synthesize_text(result.reply)
+            tts_info = FakeTTSInfoOut(
+                mode=tts_result.mode,
+                available=True,
+                content_type=tts_result.content_type,
+            )
+            if (
+                directive.audio_code == "fallback_tts"
+                and tts_result.audio_bytes
+                and settings.audio_tts_mode != "fake"
+            ):
+                tts_cache.put(
+                    log_id,
+                    tts_result.audio_bytes,
+                    tts_result.content_type,
+                )
+                directive = DirectiveOut(
+                    audio_code=directive.audio_code,
+                    face=directive.face,
+                    screen_text=directive.screen_text,
+                    fetch_url=f"/agent/audio/{log_id}/tts",
+                )
+        except ConfigurationError:
+            raise
+        except Exception:  # noqa: BLE001
+            tts_info = FakeTTSInfoOut(
+                mode=settings.audio_tts_mode,
+                available=False,
+                content_type="audio/wav",
+            )
+    else:
         tts_info = FakeTTSInfoOut(
-            mode=tts_result.mode,
-            available=True,
-            content_type=tts_result.content_type,
-        )
-    except ConfigurationError:
-        raise
-    except Exception:  # noqa: BLE001
-        tts_info = FakeTTSInfoOut(
-            mode="fake",
+            mode=settings.audio_tts_mode,
             available=False,
             content_type="audio/wav",
         )
@@ -109,8 +146,5 @@ async def post_agent_audio(
             size_bytes=metadata.size_bytes,
         ),
         tts=tts_info,
-        directive=classify_directive(
-            actions=result.actions,
-            reply=result.reply,
-        ),
+        directive=directive,
     )

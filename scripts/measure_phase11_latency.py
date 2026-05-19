@@ -18,6 +18,7 @@ from app.api._agent_helpers import process_agent_text_command
 from app.api._audio_directive import classify_directive
 from app.audio.stt import transcribe_audio
 from app.audio.tts import synthesize_text
+from app.audio.tts_cache import tts_cache
 from app.config import settings
 from app.db import SessionLocal
 from app.utils.audio_validation import validate_audio
@@ -96,7 +97,7 @@ async def measure() -> None:
         db = SessionLocal()
         try:
             with stage("agent_gemini"):
-                result = await process_agent_text_command(
+                invocation = await process_agent_text_command(
                     db,
                     user_id=USER_ID,
                     text=transcription.text,
@@ -105,8 +106,10 @@ async def measure() -> None:
                 )
         finally:
             db.close()
+        result = invocation.result
         print(f"  reply: {result.reply!r}")
         print(f"  actions: {len(result.actions)} action(s)")
+        print(f"  log_id: {invocation.log_id}")
 
         with stage("classify"):
             directive = classify_directive(
@@ -118,6 +121,41 @@ async def measure() -> None:
         with stage("tts_gemini"):
             tts_result = synthesize_text(result.reply)
         print(f"  tts: {len(tts_result.audio_bytes or b'')} bytes WAV")
+
+        with stage("cache_put"):
+            tts_cache.put(
+                invocation.log_id,
+                tts_result.audio_bytes or b"",
+                tts_result.content_type,
+            )
+
+        with stage("cache_hit"):
+            cached = tts_cache.get(invocation.log_id)
+        assert cached is not None, "cache.put then immediate get should hit"
+        print(f"  cache hit: {len(cached[0])} bytes returned")
+
+        from fastapi.testclient import TestClient
+        from app.main import app
+
+        with TestClient(app) as client:
+            with stage("cache_hit_http"):
+                http_response = client.get(
+                    f"/agent/audio/{invocation.log_id}/tts"
+                )
+            assert http_response.status_code == 200
+            print(
+                f"  cache hit via HTTP: {http_response.status_code}, "
+                f"{len(http_response.content)} bytes"
+            )
+
+            with stage("cache_miss_http"):
+                miss_response = client.get(
+                    "/agent/audio/nonexistent-log-id/tts"
+                )
+            assert miss_response.status_code == 404
+            print(f"  cache miss via HTTP: {miss_response.status_code}")
+
+        tts_cache.clear()
     finally:
         stt_patch.stop()
         tts_patch.stop()
@@ -136,7 +174,7 @@ async def measure() -> None:
     print("-" * 60)
     print(f"{'TOTAL':<20} {total:>10.3f}")
     print()
-    print(f"Note: Without TTS (success path → ESP plays from SD card):")
+    print(f"Note: Without TTS (success path; ESP plays from SD card):")
     no_tts_total = total - timings.get("tts_gemini", 0)
     print(f"  effective latency: {no_tts_total:.3f}s")
 

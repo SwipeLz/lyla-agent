@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import agent, audio, dashboard, devices, health
+from app.api import agent, audio, audio_tts, dashboard, devices, health
 from app.api._errors import register_exception_handlers
 from app.config import settings
 from app.scheduler.lifecycle import start_scheduler, stop_scheduler
@@ -47,6 +47,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_protocol_version_header(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/agent/audio"):
+        response.headers["X-Lyla-Protocol"] = "1"
+    return response
+
 # Register global Service Layer exception handlers (Req 12.7, 13.6, 13.7).
 # Done before including routers so every endpoint inherits the mapping
 # from NotFoundError/ValidationError/PermissionDeniedError to
@@ -56,5 +64,6 @@ register_exception_handlers(app)
 app.include_router(health.router, tags=["Health"])
 app.include_router(agent.router)
 app.include_router(audio.router)
+app.include_router(audio_tts.router)
 app.include_router(devices.router)
 app.include_router(dashboard.router)

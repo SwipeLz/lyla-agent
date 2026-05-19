@@ -5,9 +5,16 @@ existence checks for user/device, timezone fallback, Agent Runtime
 invocation, success-path `VoiceCommandLog`, and failure-path 500 +
 error log row. Behavior MUST mirror the original handler bit-for-bit so
 existing 189 tests continue to pass.
+
+Phase 11b: returns ``AgentInvocation`` (a small dataclass wrapping the
+existing ``AgentRunResult`` plus the persisted ``log_id``) so the
+audio handler can populate the TTS cache keyed by the same id that
+ESP firmware will later use to fetch synthesized audio bytes.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -20,6 +27,12 @@ from app.models.user import User
 from app.services import log_service
 
 
+@dataclass
+class AgentInvocation:
+    result: AgentRunResult
+    log_id: str
+
+
 async def process_agent_text_command(
     db: Session,
     *,
@@ -27,7 +40,7 @@ async def process_agent_text_command(
     text: str,
     device_id: str | None = None,
     timezone: str | None = None,
-) -> AgentRunResult:
+) -> AgentInvocation:
     user = db.query(User).filter(User.id == user_id).one_or_none()
     if user is None:
         raise HTTPException(
@@ -77,7 +90,7 @@ async def process_agent_text_command(
             detail="Agent runtime error",
         )
 
-    log_service.create_voice_command_log(
+    log_row = log_service.create_voice_command_log(
         db,
         user_id=user_id,
         device_id=device_id,
@@ -87,7 +100,7 @@ async def process_agent_text_command(
         status=result.status,
     )
 
-    return result
+    return AgentInvocation(result=result, log_id=log_row.id)
 
 
-__all__ = ["process_agent_text_command"]
+__all__ = ["AgentInvocation", "process_agent_text_command"]

@@ -54,22 +54,31 @@
 - **Main Steps:** Vite + React + TypeScript + Tailwind SPA at `frontend/`. Consumes existing FastAPI dashboard and `/agent/text` endpoints. No Next.js, no SSR, no BFF.
 - **Milestone:** User can view summary, tasks, expenses, voice command logs, and devices, plus run agent commands manually from the browser.
 
-## Phase 10: Audio Backend (Current)
-- **Status:** Hermetic foundation shipped. `POST /agent/audio` accepts multipart upload, fake STT returns deterministic transcript, fake TTS emits silent WAV via stdlib `wave`. Real STT/TTS provider deliberately deferred.
+## Phase 10: Audio Backend Foundation
+- **Status:** Shipped. Hermetic foundation. `POST /agent/audio` accepts multipart upload, fake STT returns deterministic transcript, fake TTS emits silent WAV via stdlib `wave`.
 - **Main Steps:** `app/audio/` package with provider seam (`SttProvider`/`TtsProvider` Protocols), `app/utils/audio_validation.py`, `POST /agent/audio` endpoint, AR7 hermeticity property.
-- **Milestone:** Backend audio path testable end-to-end offline; 230 tests pass; ready for a real provider drop-in.
+- **Milestone:** Backend audio path testable end-to-end offline.
 - **Runbook:** [`docs/AUDIO_BACKEND.md`](AUDIO_BACKEND.md).
 - **Summary:** [`docs/PHASE_10_SUMMARY.md`](PHASE_10_SUMMARY.md).
 
-## Phase 10.5: Real STT/TTS Provider (Next)
-- **Objective:** Plug a real STT (e.g. Google Cloud Speech) and TTS provider behind the existing `AUDIO_STT_MODE` / `AUDIO_TTS_MODE` settings.
-- **Main Steps:** Implement `SttProvider`/`TtsProvider` for the chosen vendor, add provider settings, keep AR7 hermeticity for the fake branch.
-- **Milestone:** Live audio input/output works end-to-end against a real Bahasa Indonesia voice service.
+## Phase 11a: Real Gemini STT + TTS
+- **Status:** Shipped. `app/audio/stt_gemini.py` and `app/audio/tts_gemini.py` implement real providers via Gemini multimodal (STT) and Gemini TTS preview (voice=Leda) with deferred SDK imports preserving AR7.
+- **Main Steps:** Provider classes, dispatcher fake|gemini in `stt.py`/`tts.py`, settings (`AUDIO_STT_PROVIDER_MODEL`, `AUDIO_TTS_PROVIDER_MODEL`, `AUDIO_TTS_VOICE`).
+- **Milestone:** Real Indonesian voice command → transcript → agent → reply round-trip works in ~8.5s (success path) / ~13.5s (fallback_tts path).
+- **Latency tooling:** [`scripts/measure_phase11_latency.py`](../scripts/measure_phase11_latency.py).
 
-## Phase 11: ESP Prototype
-- **Objective:** Initial hardware setup.
-- **Main Steps:** Flash ESP32-S3, setup WiFi, implement device command polling.
-- **Milestone:** ESP32 successfully polls and acknowledges commands from the backend.
+## Phase 11b: ESP-Ready TTS Cache + Directive (Current)
+- **Status:** Shipped. `directive` field with `audio_code` enum classifies actions for ESP playback. TTS cache + binary fetch endpoint give ESP a way to retrieve dynamic audio bytes.
+- **Main Steps:** `app/audio/tts_cache.py` (in-process LRU+TTL), `GET /agent/audio/{log_id}/tts`, `app/api/_audio_directive.py` (classifier), `X-Lyla-Protocol: 1` header, helper signature change to `AgentInvocation(result, log_id)`.
+- **Milestone:** ESP firmware contract is frozen; backend ready for ESP integration. 256 tests pass.
+- **Architecture:** [`docs/PHASE_11_ARCHITECTURE.md`](PHASE_11_ARCHITECTURE.md).
+- **Backend spec:** [`docs/PHASE_11_BACKEND.md`](PHASE_11_BACKEND.md).
+- **Firmware spec:** [`docs/PHASE_11_FIRMWARE.md`](PHASE_11_FIRMWARE.md).
+
+## Phase 11c: ESP32 Firmware (Next)
+- **Objective:** Build the ESP32-S3 firmware that captures audio, posts to `/agent/audio`, plays response per `directive.audio_code`.
+- **Main Steps:** I2S input/output, microSD WAV cache, OLED face/screen rendering, WiFi + HTTPClient, state machine, JSON parser.
+- **Milestone:** End-to-end voice interaction with hardware (record button → speech → DB update → speaker reply).
 
 ## Phase 12: ESP Audio Integration
 - **Objective:** Enable voice interaction on the device.

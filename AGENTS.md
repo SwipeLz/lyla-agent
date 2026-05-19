@@ -127,10 +127,12 @@ against Google's docs before changing `app/agent/runtime.py`,
    `app/audio/tts.py`, and `app/audio/_seam.py` MUST NOT import any
    provider SDK (`google.cloud.speech`, `google.cloud.texttospeech`,
    `openai`, `whisper`, `elevenlabs`, `deepgram`, `assemblyai`) and MUST
-   NOT import `google.adk.*`. Phase 10 only supports `audio_stt_mode ==
-   "fake"` and `audio_tts_mode == "fake"`; any other value raises
-   `ConfigurationError`. Property is enforced by
-   `app/tests/test_audio_fake_hermeticity.py`.
+   NOT import `google.adk.*`. Real-provider modules
+   (`app/audio/stt_gemini.py`, `app/audio/tts_gemini.py`) MAY import
+   provider SDK but ONLY via deferred imports inside method bodies —
+   mirroring `app/agent/runtime.py::_run_real`. Module-level provider
+   SDK imports remain forbidden everywhere in `app/audio/`. Property is
+   enforced by `app/tests/test_audio_fake_hermeticity.py`.
 
 ## Soft conventions
 
