@@ -83,4 +83,137 @@ export interface Device {
   status: string;
   last_seen_at: string | null;
   created_at: string;
+  firmware_version?: string | null;
+  wifi_rssi_dbm?: number | null;
+  battery_pct?: number | null;
+  free_heap_bytes?: number | null;
+}
+
+export class AuthRequiredError extends Error {
+  constructor(message = "Sesi tidak valid, silakan login ulang.") {
+    super(message);
+    this.name = "AuthRequiredError";
+  }
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface MeResponse {
+  username: string;
+  expires_at: string;
+}
+
+export interface DevicePairRequest {
+  name: string;
+}
+
+export interface DevicePairResponse {
+  device_id: string;
+  device_code: string;
+  api_token: string;
+  config_json: Record<string, unknown>;
+}
+
+export interface StageTimings {
+  validate?: number | null;
+  stt?: number | null;
+  agent?: number | null;
+  classify?: number | null;
+  tts?: number | null;
+}
+
+export interface TraceAudio {
+  filename?: string | null;
+  size_bytes?: number | null;
+  content_type?: string | null;
+}
+
+export interface TraceTranscription {
+  mode?: string | null;
+  duration_ms?: number | null;
+}
+
+export interface TraceDirective {
+  audio_code?: string | null;
+  face?: string | null;
+  screen_text?: string | null;
+}
+
+export interface TraceTts {
+  mode?: string | null;
+  available?: boolean | null;
+  content_type?: string | null;
+}
+
+export interface TraceClient {
+  request_id?: string | null;
+  firmware_version?: string | null;
+  wifi_rssi_dbm?: number | null;
+  battery_pct?: number | null;
+  recording_duration_ms?: number | null;
+}
+
+export interface TraceError {
+  layer?: string | null;
+  detail?: string | null;
+}
+
+export interface RequestTrace {
+  id: string;
+  user_id: string | null;
+  device_id: string | null;
+  input_text: string | null;
+  response_text: string | null;
+  parsed_actions: Array<Record<string, unknown>> | null;
+  status: string;
+  created_at: string;
+  request_received_at: string | null;
+  response_sent_at: string | null;
+  stage_timings: StageTimings;
+  audio: TraceAudio | null;
+  transcription: TraceTranscription | null;
+  directive: TraceDirective | null;
+  tts: TraceTts | null;
+  client: TraceClient | null;
+  error: TraceError | null;
+}
+
+export interface RecentLogSummary {
+  id: string;
+  device_id: string | null;
+  created_at: string;
+  audio_code: string | null;
+  status: string;
+  total_ms: number | null;
+}
+
+export interface TopAudioCode {
+  code: string;
+  count: number;
+}
+
+export interface StatsResponse {
+  count: number;
+  success_count: number;
+  error_count: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  p99_ms: number | null;
+  top_audio_codes: TopAudioCode[];
+}
+
+export interface DeviceStatusOut {
+  id: string;
+  device_code: string;
+  name: string;
+  status: string;
+  is_online: boolean;
+  last_seen_at: string | null;
+  firmware_version: string | null;
+  wifi_rssi_dbm: number | null;
+  battery_pct: number | null;
+  free_heap_bytes: number | null;
 }

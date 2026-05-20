@@ -93,7 +93,14 @@
 - **Main Steps:** `/login` route, `/observability` route (live tail + drill-down + device grid), "Pair New Device" modal on `/devices`, polling-based refresh.
 - **Milestone:** Operator can troubleshoot voice failures within 5 seconds of looking at the live tail.
 
-## Phase 13: WhatsApp Notification
+## Phase 13: Frontend BMO Redesign + Phase 12 UI Integration
+- **Status:** Shipped. Vite/React frontend repaint dengan BMO mascot identity. Tambah landing page publik, halaman login Phase 12, halaman observability dengan live tail + drill-down drawer, modal pair device, dan AppNavbar baru menggantikan sidebar.
+- **Main Steps:** Tailwind extended palette (11 BMO color tokens), 9 BMO face SVG dipindah ke `frontend/public/bmo/`, 24 React components baru (8 BMO base + 4 auth + 6 landing + 2 device + 5 observability + AppNavbar + EmptyState), 3 halaman baru (`/`, `/login`, `/app/observability`), 5 halaman dashboard direpaint, AuthGuard/PublicGuard cookie-based, API client refactor (`credentials: 'include'`), backend CORS adjustment 1 baris.
+- **Milestone:** Frontend build 77 modules clean, backend regression 310 passed, BMO theme terapan ke seluruh UI, auth flow end-to-end working.
+- **Summary:** [`docs/PHASE_13_SUMMARY.md`](PHASE_13_SUMMARY.md).
+- **Brief:** [`docs/phase-13/FRONTEND_BRIEF.md`](phase-13/FRONTEND_BRIEF.md).
+
+## Phase 13b: WhatsApp Notification
 - **Objective:** Add external notification channels.
 - **Main Steps:** Integrate WhatsApp Business API for reminders and daily summaries.
 - **Milestone:** User receives automated reminders on WhatsApp.

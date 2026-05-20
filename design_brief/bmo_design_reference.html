@@ -1,0 +1,432 @@
+
+<h2 class="sr-only">BMO design system — color palette, typography, dan komponen UI dengan tema BMO</h2>
+
+<style>
+.section { margin: 0 0 2.5rem; }
+.label { font-size: 12px; color: var(--color-text-secondary); margin: 0 0 8px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.swatch { border-radius: 8px; padding: 10px 14px; font-size: 12px; font-weight: 500; min-width: 80px; }
+.divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 2rem 0; }
+
+/* BMO custom palette */
+.bmo-green    { background:#9FD5B1; color:#1C4B3B; }
+.bmo-green-dk { background:#1C4B3B; color:#9FD5B1; }
+.bmo-screen   { background:#C5E3BF; color:#1C4B3B; }
+.bmo-mouth    { background:#1F8941; color:#C5E3BF; }
+.bmo-yellow   { background:#F7E72F; color:#6B5F00; }
+.bmo-blue     { background:#313F98; color:#C8CFFF; }
+.bmo-cyan     { background:#77CFDB; color:#0A3B42; }
+.bmo-red      { background:#ED306A; color:#FFF0F5; }
+.bmo-purple   { background:#b297c7; color:#2E1A4A; }
+.bmo-dark     { background:#0D1B2A; color:#C5E3BF; }
+
+/* Components */
+.card {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+.bmo-card {
+  background: #9FD5B1;
+  border: 0.5px solid #4A9B52;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge-green  { background:#C5E3BF; color:#1C4B3B; }
+.badge-blue   { background:#C8CFFF; color:#1A2466; }
+.badge-yellow { background:#FFF9C2; color:#6B5F00; }
+.badge-red    { background:#FFD6E5; color:#8B0035; }
+
+.btn-primary {
+  background: #1C4B3B;
+  color: #C5E3BF;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-secondary {
+  background: transparent;
+  color: #1C4B3B;
+  border: 1.5px solid #1C4B3B;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-accent {
+  background: #313F98;
+  color: #C8CFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.input-bmo {
+  border: 1.5px solid #9FD5B1;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  outline: none;
+  width: 180px;
+}
+.input-bmo:focus { border-color: #1F8941; box-shadow: 0 0 0 3px rgba(31,137,65,0.15); }
+
+/* BMO mascot */
+.bmo-mascot {
+  position: relative;
+  width: 80px;
+  height: 112px;
+  background: #9FD5B1;
+  border-radius: 8px;
+  box-shadow: -2px 2px 0px 2px #639975;
+  flex-shrink: 0;
+}
+.bmo-face {
+  position: absolute;
+  left: 8px; top: 7px;
+  width: 64px; height: 38px;
+  background: #C5E3BF;
+  border-radius: 6px;
+  box-shadow: -1px 1px 1px rgba(147,177,141,1) inset;
+  overflow: hidden;
+}
+.bmo-eye {
+  position: absolute;
+  width: 7px; height: 9px;
+  background: #000;
+  border-radius: 50%;
+}
+.bmo-eye-l { top: 10px; left: 16px; }
+.bmo-eye-r { top: 10px; left: 41px; }
+.bmo-mouth-w {
+  position: absolute;
+  left: 19px; top: 23px;
+  width: 26px; height: 12px;
+  overflow: hidden;
+}
+.bmo-mouth-o {
+  position: absolute;
+  width: 26px; height: 12px;
+  background: #1F8941;
+  border-bottom-left-radius: 700px;
+  border-bottom-right-radius: 700px;
+  border-top-left-radius: 320px;
+  border-top-right-radius: 320px;
+}
+.bmo-mouth-o::before {
+  position: absolute;
+  background: #C5E3BF;
+  width: 36px; height: 12px;
+  content: "";
+  top: -10px; left: -5px;
+  border-radius: 50%;
+}
+.bmo-mouth-o::after {
+  position: absolute;
+  background: #1F8941;
+  width: 22px; height: 12px;
+  content: "";
+  top: 2px; left: 2px;
+  border-radius: 50%;
+}
+.bmo-disc {
+  position: absolute;
+  left: 7px; top: 52px;
+  width: 50px; height: 5px;
+  background: #1C4B3B;
+}
+.bmo-plus-v {
+  position: absolute;
+  left: 11px; top: 64px;
+  width: 6px; height: 18px;
+  background: #F7E72F;
+}
+.bmo-plus-h {
+  position: absolute;
+  left: 5px; top: 70px;
+  width: 18px; height: 6px;
+  background: #F7E72F;
+}
+.bmo-rbtn {
+  position: absolute;
+  left: 44px; top: 64px;
+  width: 12px; height: 12px;
+  background: #ED306A;
+  border-radius: 50%;
+}
+.bmo-gbtn {
+  position: absolute;
+  left: 58px; top: 64px;
+  width: 10px; height: 10px;
+  background: #74C042;
+  border-radius: 50%;
+}
+.bmo-bb1 {
+  position: absolute;
+  left: 7px; top: 88px;
+  width: 18px; height: 6px;
+  background: #313F98;
+  border-radius: 4px;
+}
+.bmo-bb2 {
+  position: absolute;
+  left: 29px; top: 88px;
+  width: 18px; height: 6px;
+  background: #313F98;
+  border-radius: 4px;
+}
+
+/* nav bar */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #1C4B3B;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.nav-logo { color: #9FD5B1; font-size: 15px; font-weight: 500; display:flex; align-items:center; gap:8px; }
+.nav-links { display:flex; gap:16px; }
+.nav-link { color: #C5E3BF; font-size: 13px; opacity:0.85; text-decoration:none; }
+.nav-link.active { opacity:1; font-weight:500; border-bottom: 1.5px solid #9FD5B1; }
+
+/* stat card */
+.stat-card {
+  background: var(--color-background-secondary);
+  border-radius: 8px;
+  padding: 1rem;
+  flex: 1;
+  min-width: 120px;
+}
+.stat-num { font-size: 24px; font-weight: 500; color: #1C4B3B; }
+.stat-lbl { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 4px; }
+
+/* typeface demo */
+.type-h1 { font-size: 28px; font-weight: 500; color: #1C4B3B; margin:0 0 4px; }
+.type-h2 { font-size: 20px; font-weight: 500; color: #1C4B3B; margin:0 0 4px; }
+.type-body { font-size: 15px; color: var(--color-text-primary); line-height:1.6; margin:0 0 4px; }
+.type-small { font-size: 13px; color: var(--color-text-secondary); margin:0; }
+.type-code { font-family: var(--font-mono); font-size: 13px; background: #C5E3BF; color: #1C4B3B; padding: 2px 6px; border-radius:4px; }
+</style>
+
+<div style="padding: 1rem 0;">
+
+<div class="section">
+  <p class="label">color palette</p>
+  <div class="row">
+    <div class="swatch bmo-green">body green<br><span style="opacity:.7">#9FD5B1</span></div>
+    <div class="swatch bmo-screen">screen green<br><span style="opacity:.7">#C5E3BF</span></div>
+    <div class="swatch bmo-mouth">mouth green<br><span style="opacity:.7">#1F8941</span></div>
+    <div class="swatch bmo-green-dk">dark green<br><span style="opacity:.7">#1C4B3B</span></div>
+    <div class="swatch bmo-yellow">button yellow<br><span style="opacity:.7">#F7E72F</span></div>
+    <div class="swatch bmo-blue">button blue<br><span style="opacity:.7">#313F98</span></div>
+    <div class="swatch bmo-cyan">triangle cyan<br><span style="opacity:.7">#77CFDB</span></div>
+    <div class="swatch bmo-red">button red<br><span style="opacity:.7">#ED306A</span></div>
+    <div class="swatch bmo-purple">bg purple<br><span style="opacity:.7">#b297c7</span></div>
+    <div class="swatch bmo-dark">screen dark<br><span style="opacity:.7">#0D1B2A</span></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <p class="label">typography</p>
+  <div class="card" style="display:flex; flex-direction:column; gap:8px;">
+    <p class="type-h1">Heading 1 — Taskbot</p>
+    <p class="type-h2">Heading 2 — Device status</p>
+    <p class="type-body">Body text — BMO is a small, friendly, robot-like character who serves as a living video game console, TV, and camera.</p>
+    <p class="type-small">Caption — last seen 2 minutes ago · firmware v0.1.0</p>
+    <p><code class="type-code">device_token: tk_live_abc123</code></p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <p class="label">navbar</p>
+  <div class="navbar">
+    <div class="nav-logo">
+      <div class="bmo-mascot" style="width:22px;height:30px;border-radius:4px;box-shadow:none;">
+        <div style="position:absolute;left:2px;top:2px;width:18px;height:10px;background:#C5E3BF;border-radius:3px;">
+          <div style="position:absolute;width:3px;height:4px;background:#000;border-radius:50%;top:2px;left:4px;"></div>
+          <div style="position:absolute;width:3px;height:4px;background:#000;border-radius:50%;top:2px;left:11px;"></div>
+        </div>
+      </div>
+      Taskbot
+    </div>
+    <div class="nav-links">
+      <a class="nav-link active">dashboard</a>
+      <a class="nav-link">devices</a>
+      <a class="nav-link">observability</a>
+      <a class="nav-link">settings</a>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <p class="label">mascot</p>
+  <div class="row" style="align-items:center; gap:24px;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <div class="bmo-mascot">
+        <div class="bmo-face">
+          <div class="bmo-eye bmo-eye-l"></div>
+          <div class="bmo-eye bmo-eye-r"></div>
+          <div class="bmo-mouth-w"><div class="bmo-mouth-o"></div></div>
+        </div>
+        <div class="bmo-disc"></div>
+        <div class="bmo-plus-v"></div>
+        <div class="bmo-plus-h"></div>
+        <div class="bmo-rbtn"></div>
+        <div class="bmo-gbtn"></div>
+        <div class="bmo-bb1"></div>
+        <div class="bmo-bb2"></div>
+      </div>
+      <span style="font-size:11px;color:var(--color-text-secondary)">80px</span>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <div class="bmo-mascot" style="width:48px;height:68px;border-radius:6px;">
+        <div style="position:absolute;left:5px;top:5px;width:38px;height:23px;background:#C5E3BF;border-radius:4px;overflow:hidden;">
+          <div style="position:absolute;width:5px;height:6px;background:#000;border-radius:50%;top:6px;left:9px;"></div>
+          <div style="position:absolute;width:5px;height:6px;background:#000;border-radius:50%;top:6px;left:24px;"></div>
+          <div style="position:absolute;left:12px;top:14px;width:14px;height:7px;overflow:hidden;">
+            <div style="width:14px;height:7px;background:#1F8941;border-bottom-left-radius:700px;border-bottom-right-radius:700px;border-top-left-radius:320px;border-top-right-radius:320px;"></div>
+            <div style="position:absolute;background:#C5E3BF;width:20px;height:7px;top:-6px;left:-3px;border-radius:50%;"></div>
+          </div>
+        </div>
+        <div style="position:absolute;left:4px;top:31px;width:30px;height:3px;background:#1C4B3B;"></div>
+        <div style="position:absolute;left:6px;top:38px;width:4px;height:11px;background:#F7E72F;"></div>
+        <div style="position:absolute;left:3px;top:42px;width:12px;height:4px;background:#F7E72F;"></div>
+        <div style="position:absolute;left:27px;top:38px;width:8px;height:8px;background:#ED306A;border-radius:50%;"></div>
+        <div style="position:absolute;left:5px;top:54px;width:12px;height:4px;background:#313F98;border-radius:3px;"></div>
+        <div style="position:absolute;left:19px;top:54px;width:12px;height:4px;background:#313F98;border-radius:3px;"></div>
+      </div>
+      <span style="font-size:11px;color:var(--color-text-secondary)">48px</span>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <div class="bmo-mascot" style="width:28px;height:40px;border-radius:4px;box-shadow:none;">
+        <div style="position:absolute;left:3px;top:3px;width:22px;height:13px;background:#C5E3BF;border-radius:3px;">
+          <div style="position:absolute;width:3px;height:4px;background:#000;border-radius:50%;top:3px;left:5px;"></div>
+          <div style="position:absolute;width:3px;height:4px;background:#000;border-radius:50%;top:3px;left:14px;"></div>
+        </div>
+        <div style="position:absolute;left:3px;top:19px;width:18px;height:2px;background:#1C4B3B;"></div>
+        <div style="position:absolute;left:15px;top:23px;width:6px;height:6px;background:#ED306A;border-radius:50%;"></div>
+        <div style="position:absolute;left:3px;top:32px;width:8px;height:3px;background:#313F98;border-radius:2px;"></div>
+        <div style="position:absolute;left:13px;top:32px;width:8px;height:3px;background:#313F98;border-radius:2px;"></div>
+      </div>
+      <span style="font-size:11px;color:var(--color-text-secondary)">28px</span>
+    </div>
+    <div class="card" style="flex:1; min-width:200px;">
+      <p style="font-size:13px;font-weight:500;margin:0 0 4px;color:var(--color-text-primary)">Penggunaan maskot</p>
+      <p style="font-size:12px;color:var(--color-text-secondary);margin:0;line-height:1.6">
+        80px — hero / halaman kosong<br>
+        48px — kartu device / notifikasi<br>
+        28px — favicon / avatar kecil
+      </p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <p class="label">badges & status</p>
+  <div class="row">
+    <span class="badge badge-green">online</span>
+    <span class="badge badge-blue">syncing</span>
+    <span class="badge badge-yellow">idle</span>
+    <span class="badge badge-red">offline</span>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <p class="label">buttons</p>
+  <div class="row">
+    <button class="btn-primary">pair device</button>
+    <button class="btn-secondary">lihat detail</button>
+    <button class="btn-accent">kirim audio</button>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <p class="label">form input</p>
+  <div class="row">
+    <input class="input-bmo" placeholder="nama device..." />
+    <input class="input-bmo" placeholder="device token..." />
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <p class="label">stat cards — contoh dashboard</p>
+  <div class="row">
+    <div class="stat-card">
+      <p class="stat-lbl">devices online</p>
+      <p class="stat-num">3</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-lbl">requests hari ini</p>
+      <p class="stat-num">124</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-lbl">avg latency</p>
+      <p class="stat-num">312<span style="font-size:14px;font-weight:400">ms</span></p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-lbl">uptime</p>
+      <p class="stat-num">99<span style="font-size:14px;font-weight:400">%</span></p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <p class="label">device card — contoh komponen</p>
+  <div class="card" style="display:flex; gap:16px; align-items:center; max-width:400px;">
+    <div class="bmo-mascot" style="width:48px;height:68px;border-radius:6px;flex-shrink:0;">
+      <div style="position:absolute;left:5px;top:5px;width:38px;height:23px;background:#C5E3BF;border-radius:4px;overflow:hidden;">
+        <div style="position:absolute;width:5px;height:6px;background:#000;border-radius:50%;top:6px;left:9px;"></div>
+        <div style="position:absolute;width:5px;height:6px;background:#000;border-radius:50%;top:6px;left:24px;"></div>
+      </div>
+      <div style="position:absolute;left:4px;top:31px;width:30px;height:3px;background:#1C4B3B;"></div>
+      <div style="position:absolute;left:27px;top:38px;width:8px;height:8px;background:#ED306A;border-radius:50%;"></div>
+      <div style="position:absolute;left:5px;top:54px;width:12px;height:4px;background:#313F98;border-radius:3px;"></div>
+      <div style="position:absolute;left:19px;top:54px;width:12px;height:4px;background:#313F98;border-radius:3px;"></div>
+    </div>
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <p style="font-size:15px;font-weight:500;margin:0;color:var(--color-text-primary)">Taskbot Demo</p>
+        <span class="badge badge-green">online</span>
+      </div>
+      <p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 2px;">TASKBOT-DEMO-001</p>
+      <p style="font-size:12px;color:var(--color-text-secondary);margin:0;">firmware v0.1.0 · RSSI -52 dBm</p>
+    </div>
+  </div>
+</div>
+
+</div>

@@ -13,6 +13,7 @@ import { ErrorState } from "../components/ErrorState";
 import { StatCard } from "../components/StatCard";
 import { AgentCommandBox } from "../components/AgentCommandBox";
 import { VoiceLogList } from "../components/VoiceLogList";
+import { EmptyState } from "../components/EmptyState";
 import { formatCurrencyIDR } from "../lib/format";
 
 interface Snapshot {
@@ -80,7 +81,7 @@ export function DashboardPage() {
   return (
     <section className="space-y-6">
       <header>
-        <h1 className="text-xl font-semibold">Ringkasan</h1>
+        <h1 className="text-2xl font-medium text-bmo-dark">Ringkasan</h1>
         <p className="text-sm text-slate-500">
           Snapshot aktivitas hari ini.
         </p>
@@ -124,10 +125,18 @@ export function DashboardPage() {
           <AgentCommandBox onSuccess={() => setRefreshKey((k) => k + 1)} />
 
           <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+            <h2 className="text-sm font-medium uppercase tracking-wide text-slate-600">
               Aktivitas terkini
             </h2>
-            <VoiceLogList logs={recentLogs} />
+            {recentLogs.length === 0 ? (
+              <EmptyState
+                face="idle"
+                title="Belum ada aktivitas hari ini"
+                description="Coba jalankan perintah lewat Agent Command di atas."
+              />
+            ) : (
+              <VoiceLogList logs={recentLogs} />
+            )}
           </section>
         </>
       ) : null}

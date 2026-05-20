@@ -59,6 +59,8 @@ never touches it.
 - `docs/PHASE_12_SUMMARY.md` — Phase 12 (observability + auth) shipped artifacts.
 - `docs/phase-12/BACKEND_BRIEF.md` — Phase 12 backend brief.
 - `docs/phase-12/ESP_BRIEF.md` — Phase 12 ESP firmware brief.
+- `docs/PHASE_13_SUMMARY.md` — Phase 13 (frontend BMO redesign) shipped artifacts.
+- `docs/phase-13/FRONTEND_BRIEF.md` — Phase 13 frontend brief.
 
 **Before answering "what changed?" / "what was done in phase N?" / "how do I run X?" — read `docs/` first.** The phase summary files (`PHASE_*_SUMMARY.md`) are the ground truth for shipped work; the runbooks are the ground truth for operator workflows. Only fall back to grepping source code or git log if the answer is not in `docs/`.
 

@@ -8,9 +8,6 @@ export const DEMO_USER_ID: string | null =
 export const DEMO_DEVICE_ID: string | null =
   trim(import.meta.env.VITE_DEMO_DEVICE_ID) || null;
 
-export const DASHBOARD_TOKEN: string | null =
-  trim(import.meta.env.VITE_DASHBOARD_TOKEN) || null;
-
 export type ReadyStatus =
   | { ok: true; userId: string }
   | { ok: false; reason: string };

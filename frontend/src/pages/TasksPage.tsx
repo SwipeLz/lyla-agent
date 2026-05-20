@@ -5,6 +5,8 @@ import { isReady } from "../lib/env";
 import { LoadingState } from "../components/LoadingState";
 import { ErrorState } from "../components/ErrorState";
 import { TaskList } from "../components/TaskList";
+import { EmptyState } from "../components/EmptyState";
+import { BmoButton } from "../components/bmo/BmoButton";
 
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "", label: "Semua" },
@@ -49,28 +51,36 @@ export function TasksPage() {
   return (
     <section className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Tugas</h1>
-        <div className="flex gap-2">
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            disabled={!userId || loading}
-            className="rounded border border-slate-300 bg-white px-2 py-1 text-sm"
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
+        <h1 className="text-2xl font-medium text-bmo-dark">Tugas</h1>
+        <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1 rounded-md border border-bmo-border bg-surface-elev p-1">
+            {STATUS_OPTIONS.map((opt) => {
+              const active = filter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFilter(opt.value)}
+                  disabled={!userId || loading}
+                  className={`cursor-pointer rounded px-3 py-1 text-xs font-medium transition-colors ${
+                    active
+                      ? "bg-bmo-dark text-bmo-screen"
+                      : "text-slate-600 hover:bg-bmo-screen/40"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          <BmoButton
+            variant="secondary"
+            size="sm"
             onClick={() => userId && load(userId, filter)}
             disabled={!userId || loading}
-            className="rounded border border-slate-300 bg-white px-3 py-1 text-sm hover:bg-slate-50 disabled:opacity-50"
           >
             Refresh
-          </button>
+          </BmoButton>
         </div>
       </header>
 
@@ -82,11 +92,19 @@ export function TasksPage() {
         />
       ) : null}
       {!loading && !error ? (
-        <TaskList
-          tasks={tasks}
-          onUpdate={handleUpdate}
-          onDelete={handleDelete}
-        />
+        tasks.length === 0 ? (
+          <EmptyState
+            face="idle"
+            title="Belum ada tugas"
+            description="Coba katakan: catat tugas matematika besok jam 10 pagi"
+          />
+        ) : (
+          <TaskList
+            tasks={tasks}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+          />
+        )
       ) : null}
     </section>
   );

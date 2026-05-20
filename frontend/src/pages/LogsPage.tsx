@@ -5,6 +5,8 @@ import { isReady } from "../lib/env";
 import { LoadingState } from "../components/LoadingState";
 import { ErrorState } from "../components/ErrorState";
 import { VoiceLogList } from "../components/VoiceLogList";
+import { EmptyState } from "../components/EmptyState";
+import { BmoButton } from "../components/bmo/BmoButton";
 
 export function LogsPage() {
   const ready = isReady();
@@ -33,20 +35,30 @@ export function LogsPage() {
   return (
     <section className="space-y-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Riwayat perintah</h1>
-        <button
-          type="button"
+        <h1 className="text-2xl font-medium text-bmo-dark">Riwayat Suara</h1>
+        <BmoButton
+          variant="secondary"
+          size="sm"
           onClick={() => userId && load(userId)}
           disabled={!userId || loading}
-          className="rounded border border-slate-300 bg-white px-3 py-1 text-sm hover:bg-slate-50 disabled:opacity-50"
         >
           Refresh
-        </button>
+        </BmoButton>
       </header>
 
       {loading ? <LoadingState /> : null}
       {error ? <ErrorState error={error} onRetry={() => userId && load(userId)} /> : null}
-      {!loading && !error ? <VoiceLogList logs={logs} /> : null}
+      {!loading && !error ? (
+        logs.length === 0 ? (
+          <EmptyState
+            face="idle"
+            title="Belum ada riwayat"
+            description="Riwayat perintah suara muncul di sini setelah Anda menggunakan Agent Command."
+          />
+        ) : (
+          <VoiceLogList logs={logs} />
+        )
+      ) : null}
     </section>
   );
 }

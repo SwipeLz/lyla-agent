@@ -13,7 +13,7 @@ body,
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-surface text-bmo-dark antialiased;
   font-family:
     "Inter",
     ui-sans-serif,
@@ -28,4 +28,8 @@ body {
 
 details > summary {
   cursor: pointer;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
 }

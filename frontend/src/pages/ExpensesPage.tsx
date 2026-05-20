@@ -5,6 +5,9 @@ import { isReady } from "../lib/env";
 import { LoadingState } from "../components/LoadingState";
 import { ErrorState } from "../components/ErrorState";
 import { ExpenseList } from "../components/ExpenseList";
+import { EmptyState } from "../components/EmptyState";
+import { BmoButton } from "../components/bmo/BmoButton";
+import { BmoInput } from "../components/bmo/BmoInput";
 
 export function ExpensesPage() {
   const ready = isReady();
@@ -72,72 +75,65 @@ export function ExpensesPage() {
   return (
     <section className="space-y-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Pengeluaran</h1>
-        <button
-          type="button"
+        <h1 className="text-2xl font-medium text-bmo-dark">Pengeluaran</h1>
+        <BmoButton
+          variant="secondary"
+          size="sm"
           onClick={() => userId && load(userId)}
           disabled={!userId || loading}
-          className="rounded border border-slate-300 bg-white px-3 py-1 text-sm hover:bg-slate-50 disabled:opacity-50"
         >
           Refresh
-        </button>
+        </BmoButton>
       </header>
 
       <form
         onSubmit={handleSubmit}
-        className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-2"
+        className="grid gap-3 rounded-lg border border-bmo-border bg-surface-elev p-4 md:grid-cols-2"
       >
         <label className="space-y-1 text-sm">
-          <span className="text-slate-700">Amount (IDR)</span>
-          <input
+          <span className="font-medium text-bmo-dark">Amount (IDR)</span>
+          <BmoInput
             type="number"
             min={1}
             step={1}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             required
-            className="w-full rounded border border-slate-300 px-2 py-1 text-sm"
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-slate-700">Kategori</span>
-          <input
+          <span className="font-medium text-bmo-dark">Kategori</span>
+          <BmoInput
             type="text"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded border border-slate-300 px-2 py-1 text-sm"
             placeholder="makan, transport, …"
           />
         </label>
         <label className="space-y-1 text-sm md:col-span-2">
-          <span className="text-slate-700">Catatan</span>
+          <span className="font-medium text-bmo-dark">Catatan</span>
           <textarea
             rows={2}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full rounded border border-slate-300 px-2 py-1 text-sm"
+            className="w-full rounded-md border-2 border-bmo-body bg-surface-elev px-3 py-2 text-sm text-bmo-dark focus:border-bmo-mouth focus:outline-none focus:ring-2 focus:ring-bmo-mouth/20"
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-slate-700">Waktu</span>
-          <input
+          <span className="font-medium text-bmo-dark">Waktu</span>
+          <BmoInput
             type="datetime-local"
             value={spentAt}
             onChange={(e) => setSpentAt(e.target.value)}
-            className="w-full rounded border border-slate-300 px-2 py-1 text-sm"
           />
         </label>
         <div className="flex items-end">
-          <button
-            type="submit"
-            disabled={submitting || !userId}
-            className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-          >
+          <BmoButton type="submit" disabled={submitting || !userId}>
             {submitting ? "Menyimpan…" : "Tambah"}
-          </button>
+          </BmoButton>
         </div>
         {formError ? (
-          <p className="md:col-span-2 rounded border border-red-200 bg-red-50 p-2 text-xs text-red-800">
+          <p className="md:col-span-2 rounded border border-bmo-red/40 bg-pink-50 p-2 text-xs text-bmo-red">
             {formError}
           </p>
         ) : null}
@@ -145,7 +141,17 @@ export function ExpensesPage() {
 
       {loading ? <LoadingState /> : null}
       {error ? <ErrorState error={error} onRetry={() => userId && load(userId)} /> : null}
-      {!loading && !error ? <ExpenseList expenses={expenses} /> : null}
+      {!loading && !error ? (
+        expenses.length === 0 ? (
+          <EmptyState
+            face="idle"
+            title="Belum ada pengeluaran"
+            description="Coba: catat makan siang 25000"
+          />
+        ) : (
+          <ExpenseList expenses={expenses} />
+        )
+      ) : null}
     </section>
   );
 }
