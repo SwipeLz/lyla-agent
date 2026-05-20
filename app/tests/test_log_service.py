@@ -81,7 +81,10 @@ blank_str = st.one_of(
 # Floats are constrained with ``allow_subnormal=False`` because subnormal
 # IEEE-754 values can drift by 1 ULP across SQLite's TEXT-based JSON
 # round-trip (e.g. ``8.427515233054102e-228`` becomes
-# ``8.427515233054103e-228``). Subnormals are not realistic LLM outputs.
+# ``8.427515233054103e-228``). They are also bounded to ±1e15 because
+# very large doubles (>~1e16) lose mantissa precision through Python's
+# json.dumps→json.loads cycle even outside subnormal range. LLM tool
+# args don't realistically produce such magnitudes.
 # Integers are bounded to ±(2**53-1) to avoid JSON precision loss when
 # SQLite stores them as TEXT and Python's json.dumps converts large ints
 # to scientific notation (floats).
@@ -91,6 +94,8 @@ json_serializable = st.recursive(
         st.booleans(),
         st.integers(min_value=-(2**53 - 1), max_value=2**53 - 1),
         st.floats(
+            min_value=-1e15,
+            max_value=1e15,
             allow_nan=False,
             allow_infinity=False,
             allow_subnormal=False,

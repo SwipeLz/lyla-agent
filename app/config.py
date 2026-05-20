@@ -58,6 +58,23 @@ class Settings(BaseSettings):
     audio_tts_voice: str = "Leda"
     tts_cache_ttl_seconds: int = 300
 
+    # Phase 12 — dashboard auth + observability (internet-facing).
+    # Single-user MVP. Password is scrypt-hashed via stdlib `hashlib.scrypt`;
+    # generate the env value with `python -m scripts.hash_dashboard_password`.
+    # Empty `dashboard_password_scrypt` is fail-closed: every login attempt 401.
+    # Sessions are stored in-memory (server restart = re-login).
+    # `cookie_secure=True` requires TLS termination upstream (tunnel / reverse proxy).
+    # `require_device_token=True` forces ESP requests to carry `X-Device-Token`.
+    dashboard_username: str = "admin"
+    dashboard_password_scrypt: str = ""
+    session_ttl_hours: int = 24
+    cookie_secure: bool = True
+    require_device_token: bool = True
+    login_rate_limit_max_fails: int = 5
+    login_rate_limit_window_seconds: int = 300
+    base_url: str = "http://127.0.0.1:8765"
+    mvp_user_email: str = "demo@taskbot.local"
+
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",

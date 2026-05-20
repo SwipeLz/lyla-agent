@@ -46,6 +46,11 @@ PHASE3_SCHEMA: frozenset[tuple[str, str, str]] = frozenset(
         ("devices", "name", "VARCHAR"),
         ("devices", "status", "VARCHAR"),
         ("devices", "user_id", "VARCHAR"),
+        ("devices", "api_token", "VARCHAR"),
+        ("devices", "firmware_version", "VARCHAR(64)"),
+        ("devices", "wifi_rssi_dbm", "INTEGER"),
+        ("devices", "battery_pct", "INTEGER"),
+        ("devices", "free_heap_bytes", "INTEGER"),
         # expenses
         ("expenses", "amount", "INTEGER"),
         ("expenses", "category", "VARCHAR"),
@@ -88,6 +93,9 @@ PHASE3_SCHEMA: frozenset[tuple[str, str, str]] = frozenset(
         ("voice_command_logs", "response_text", "TEXT"),
         ("voice_command_logs", "status", "VARCHAR"),
         ("voice_command_logs", "user_id", "VARCHAR"),
+        ("voice_command_logs", "metadata_json", "JSON"),
+        ("voice_command_logs", "request_received_at", "DATETIME"),
+        ("voice_command_logs", "response_sent_at", "DATETIME"),
     }
 )
 

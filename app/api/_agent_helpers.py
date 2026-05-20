@@ -14,7 +14,10 @@ ESP firmware will later use to fetch synthesized audio bytes.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import datetime as dt
+import time
+from dataclasses import dataclass, field
+from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -31,6 +34,25 @@ from app.services import log_service
 class AgentInvocation:
     result: AgentRunResult
     log_id: str
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+def _empty_metadata() -> dict[str, Any]:
+    return {
+        "stage_timings_ms": {
+            "validate": None,
+            "stt": None,
+            "agent": None,
+            "classify": None,
+            "tts": None,
+        },
+        "transcription": None,
+        "directive": None,
+        "audio": None,
+        "tts": None,
+        "client": {},
+        "error": None,
+    }
 
 
 async def process_agent_text_command(
@@ -41,6 +63,9 @@ async def process_agent_text_command(
     device_id: str | None = None,
     timezone: str | None = None,
 ) -> AgentInvocation:
+    request_received_at = dt.datetime.now(tz=dt.timezone.utc)
+    metadata = _empty_metadata()
+
     user = db.query(User).filter(User.id == user_id).one_or_none()
     if user is None:
         raise HTTPException(
@@ -60,6 +85,7 @@ async def process_agent_text_command(
 
     tz = timezone if timezone else settings.timezone
 
+    agent_start = time.perf_counter()
     try:
         result = await run_text(
             db,
@@ -69,10 +95,14 @@ async def process_agent_text_command(
             timezone=tz,
         )
     except Exception as exc:  # noqa: BLE001
+        agent_ms = int((time.perf_counter() - agent_start) * 1000)
+        response_sent_at = dt.datetime.now(tz=dt.timezone.utc)
         try:
             db.rollback()
         except Exception:  # noqa: BLE001
             pass
+        metadata["stage_timings_ms"]["agent"] = agent_ms
+        metadata["error"] = {"layer": "agent", "detail": str(exc)}
         try:
             log_service.create_voice_command_log(
                 db,
@@ -82,6 +112,9 @@ async def process_agent_text_command(
                 parsed_actions=[],
                 response_text=str(exc),
                 status="error",
+                metadata_json=metadata,
+                request_received_at=request_received_at,
+                response_sent_at=response_sent_at,
             )
         except Exception:  # noqa: BLE001
             pass
@@ -89,6 +122,10 @@ async def process_agent_text_command(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Agent runtime error",
         )
+
+    agent_ms = int((time.perf_counter() - agent_start) * 1000)
+    response_sent_at = dt.datetime.now(tz=dt.timezone.utc)
+    metadata["stage_timings_ms"]["agent"] = agent_ms
 
     log_row = log_service.create_voice_command_log(
         db,
@@ -98,9 +135,12 @@ async def process_agent_text_command(
         parsed_actions=result.actions,
         response_text=result.reply,
         status=result.status,
+        metadata_json=metadata,
+        request_received_at=request_received_at,
+        response_sent_at=response_sent_at,
     )
 
-    return AgentInvocation(result=result, log_id=log_row.id)
+    return AgentInvocation(result=result, log_id=log_row.id, metadata=metadata)
 
 
 __all__ = ["AgentInvocation", "process_agent_text_command"]

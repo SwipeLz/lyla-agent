@@ -152,3 +152,7 @@ class DeviceOut(BaseModel):
     status: str
     last_seen_at: Optional[datetime] = None
     created_at: datetime
+    firmware_version: Optional[str] = None
+    wifi_rssi_dbm: Optional[int] = None
+    battery_pct: Optional[int] = None
+    free_heap_bytes: Optional[int] = None

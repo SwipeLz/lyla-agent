@@ -19,6 +19,9 @@ class VoiceCommandLog(Base):
     status = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
-    # Relationships
+    metadata_json = Column(JSON, nullable=True)
+    request_received_at = Column(DateTime(timezone=True), nullable=True)
+    response_sent_at = Column(DateTime(timezone=True), nullable=True)
+
     user = relationship("User", back_populates="voice_command_logs")
     device = relationship("Device", back_populates="voice_command_logs")

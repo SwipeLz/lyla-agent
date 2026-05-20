@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.db import Base
@@ -19,7 +19,12 @@ class Device(Base):
     last_seen_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
-    # Relationships
+    api_token = Column(String, nullable=True)
+    firmware_version = Column(String(64), nullable=True)
+    wifi_rssi_dbm = Column(Integer, nullable=True)
+    battery_pct = Column(Integer, nullable=True)
+    free_heap_bytes = Column(Integer, nullable=True)
+
     user = relationship("User", back_populates="devices")
     commands = relationship("DeviceCommand", back_populates="device", cascade="all, delete-orphan")
     voice_command_logs = relationship("VoiceCommandLog", back_populates="device")

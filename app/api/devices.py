@@ -39,13 +39,21 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api._auth_dependencies import require_session
 from app.config import settings
 from app.db import get_db
 from app.models.constants import DeviceCommandStatus, DeviceStatus
 from app.models.device_command import DeviceCommand
-from app.schemas.devices import AckResponse, DeviceStatusUpdate, PendingCommandOut
+from app.models.user import User
+from app.schemas.devices import (
+    AckResponse,
+    DevicePairRequest,
+    DevicePairResponse,
+    DeviceStatusUpdate,
+    PendingCommandOut,
+)
 from app.services import device_service
-from app.services.exceptions import NotFoundError
+from app.services.exceptions import NotFoundError, ValidationError
 from app.utils.timezone import now_utc
 
 router = APIRouter(tags=["Devices"])
@@ -180,7 +188,77 @@ def update_status(
             detail="Device tidak ditemukan",
         )
 
+    has_telemetry = any(
+        v is not None
+        for v in (
+            payload.firmware_version,
+            payload.wifi_rssi_dbm,
+            payload.battery_pct,
+            payload.free_heap_bytes,
+        )
+    )
+    if has_telemetry:
+        try:
+            device = device_service.update_telemetry(
+                db,
+                device.id,
+                firmware_version=payload.firmware_version,
+                wifi_rssi_dbm=payload.wifi_rssi_dbm,
+                battery_pct=payload.battery_pct,
+                free_heap_bytes=payload.free_heap_bytes,
+            )
+        except NotFoundError:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Device tidak ditemukan",
+            )
+
     return {
         "status": device.status,
         "last_seen_at": device.last_seen_at.isoformat() if device.last_seen_at else None,
     }
+
+
+@router.post(
+    "/devices/pair",
+    response_model=DevicePairResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def pair_device(
+    payload: DevicePairRequest,
+    db: Session = Depends(get_db),
+    _: object = Depends(require_session),
+) -> DevicePairResponse:
+    user = (
+        db.query(User).filter(User.email == settings.mvp_user_email).one_or_none()
+    )
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"MVP user {settings.mvp_user_email!r} not found",
+        )
+
+    try:
+        device = device_service.pair_device(db, user.id, payload.name)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+
+    config_json = {
+        "user_id": user.id,
+        "device_id": device.id,
+        "device_code": device.device_code,
+        "device_token": device.api_token,
+        "base_url": settings.base_url,
+        "wifi": {"ssid": "", "password": ""},
+        "firmware_version": "0.1.0",
+    }
+
+    return DevicePairResponse(
+        device_id=device.id,
+        device_code=device.device_code,
+        api_token=device.api_token or "",
+        config_json=config_json,
+    )

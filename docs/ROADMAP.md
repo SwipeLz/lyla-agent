@@ -77,13 +77,21 @@
 
 ## Phase 11c: ESP32 Firmware (Next)
 - **Objective:** Build the ESP32-S3 firmware that captures audio, posts to `/agent/audio`, plays response per `directive.audio_code`.
-- **Main Steps:** I2S input/output, microSD WAV cache, OLED face/screen rendering, WiFi + HTTPClient, state machine, JSON parser.
+- **Main Steps:** I2S input/output, microSD WAV cache, OLED face/screen rendering, WiFi + `WiFiClientSecure` + `setInsecure()`, state machine, JSON parser, telemetry fields, `X-Device-Token` header.
 - **Milestone:** End-to-end voice interaction with hardware (record button → speech → DB update → speaker reply).
+- **Brief:** [`docs/phase-12/ESP_BRIEF.md`](phase-12/ESP_BRIEF.md).
 
-## Phase 12: ESP Audio Integration
-- **Objective:** Enable voice interaction on the device.
-- **Main Steps:** Implement audio recording, streaming to backend, and playing TTS responses.
-- **Milestone:** End-to-end voice interaction through the ESP32.
+## Phase 12: Observability Dashboard + Simple Auth (Backend)
+- **Status:** Shipped. Internet-safe single-user auth (scrypt-hashed, in-memory sessions, login rate-limit), device pairing flow, stage-by-stage telemetry capture, 4 observability endpoints (trace/recent/stats/devices), extended heartbeat schema, default-on `X-Device-Token` gate.
+- **Main Steps:** `app/auth/passwords.py` (stdlib scrypt), `app/auth/session.py`, `app/api/auth.py`, `app/api/_rate_limit.py`, `app/api/_auth_dependencies.py`, `app/api/observability.py`, Alembic revision `0002`, telemetry capture in `_agent_helpers.py` + `audio.py`, `device_service.pair_device` + `update_telemetry`, `scripts/hash_dashboard_password.py` helper.
+- **Milestone:** 305/305 tests passing. Operator can login, pair a device, and drill into any failed `/agent/audio` request to identify the failing layer (validate / stt / agent / classify / tts).
+- **Summary:** [`docs/PHASE_12_SUMMARY.md`](PHASE_12_SUMMARY.md).
+- **Backend brief:** [`docs/phase-12/BACKEND_BRIEF.md`](phase-12/BACKEND_BRIEF.md).
+
+## Phase 12-frontend: Observability Frontend (Follow-up)
+- **Objective:** Build the dashboard UI for the Phase 12 backend.
+- **Main Steps:** `/login` route, `/observability` route (live tail + drill-down + device grid), "Pair New Device" modal on `/devices`, polling-based refresh.
+- **Milestone:** Operator can troubleshoot voice failures within 5 seconds of looking at the live tail.
 
 ## Phase 13: WhatsApp Notification
 - **Objective:** Add external notification channels.

@@ -7,14 +7,18 @@ Responsibilities:
 - Look up devices by their stable ``device_code``.
 - Queue, list, mark-sent, and acknowledge device commands.
 - Update a device's online/offline status and ``last_seen_at`` timestamp.
+- Pair new devices and persist heartbeat telemetry (Phase 12).
 """
 from __future__ import annotations
+
+import secrets
 
 from sqlalchemy.orm import Session
 
 from app.models.constants import DeviceCommandStatus, DeviceStatus
 from app.models.device import Device
 from app.models.device_command import DeviceCommand
+from app.models.user import User
 from app.services.exceptions import NotFoundError, ValidationError
 from app.utils.timezone import now_utc
 
@@ -140,6 +144,68 @@ def update_device_status(
 
     device.status = status
     device.last_seen_at = now_utc()
+    db.commit()
+    db.refresh(device)
+    return device
+
+
+def pair_device(db: Session, user_id: str, name: str) -> Device:
+    """Create a new ``Device`` for ``user_id`` with a freshly minted token.
+
+    - ``NotFoundError`` if no user with ``user_id`` exists.
+    - ``ValidationError`` if ``name`` is not a non-blank string.
+    """
+    if not isinstance(name, str) or not name.strip():
+        raise ValidationError("name must be a non-blank string")
+
+    user = db.query(User).filter(User.id == user_id).one_or_none()
+    if user is None:
+        raise NotFoundError(f"User {user_id!r} not found")
+
+    device_code = "TASKBOT-" + secrets.token_hex(4).upper()
+    api_token = "tk_live_" + secrets.token_urlsafe(32)
+
+    device = Device(
+        user_id=user_id,
+        device_code=device_code,
+        name=name,
+        status=DeviceStatus.OFFLINE,
+        api_token=api_token,
+    )
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+    return device
+
+
+def update_telemetry(
+    db: Session,
+    device_id: str,
+    *,
+    firmware_version: str | None = None,
+    wifi_rssi_dbm: int | None = None,
+    battery_pct: int | None = None,
+    free_heap_bytes: int | None = None,
+) -> Device:
+    """Persist heartbeat telemetry on the device row.
+
+    Only non-``None`` fields are written; absent fields preserve previous
+    values. Raises ``NotFoundError`` if no device with ``device_id``
+    exists.
+    """
+    device = db.query(Device).filter(Device.id == device_id).one_or_none()
+    if device is None:
+        raise NotFoundError(f"Device {device_id!r} not found")
+
+    if firmware_version is not None:
+        device.firmware_version = firmware_version
+    if wifi_rssi_dbm is not None:
+        device.wifi_rssi_dbm = wifi_rssi_dbm
+    if battery_pct is not None:
+        device.battery_pct = battery_pct
+    if free_heap_bytes is not None:
+        device.free_heap_bytes = free_heap_bytes
+
     db.commit()
     db.refresh(device)
     return device

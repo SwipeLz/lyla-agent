@@ -67,9 +67,36 @@ class DeviceStatusUpdate(BaseModel):
     Backs ``POST /devices/{device_code}/status``. The handler is responsible for
     rejecting values outside ``{"online", "offline"}`` with HTTP 422 (per
     Requirement 11.4); this schema only enforces the field's presence and type.
+
+    Phase 12 extends this with optional telemetry fields. ESP firmware may send
+    none of them (backward-compatible), or any subset. The handler routes
+    non-``None`` telemetry to ``device_service.update_telemetry``.
     """
 
     status: str = Field(
         ...,
         description="Reported device status; expected to be 'online' or 'offline'.",
     )
+    firmware_version: str | None = None
+    wifi_rssi_dbm: int | None = None
+    battery_pct: int | None = None
+    free_heap_bytes: int | None = None
+
+
+class DevicePairRequest(BaseModel):
+    name: str = Field(..., description="Operator-friendly device label.")
+
+
+class DevicePairResponse(BaseModel):
+    """Response body for ``POST /devices/pair`` (Phase 12).
+
+    ``config_json`` is the ready-to-paste blob the operator saves to the SD
+    card as ``/sd/config.json``. ``api_token`` is included at the top level
+    only on this pair response so the operator can copy it; never expose it
+    via GET endpoints.
+    """
+
+    device_id: str
+    device_code: str
+    api_token: str
+    config_json: dict

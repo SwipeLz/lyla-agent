@@ -8,17 +8,24 @@ Cache miss / expired → 404. Phase 10 default (fake TTS) never populates
 the cache, so this endpoint always returns 404 in fake mode — that's
 correct: fallback_tts only triggers a real synthesis when ``audio_tts_mode
 == "gemini"``.
+
+Phase 12 wires ``require_device_token`` so internet-facing deployments
+reject unauthenticated reads of cached audio bytes.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
+from app.api._auth_dependencies import require_device_token
 from app.audio.tts_cache import tts_cache
 
 router = APIRouter(tags=["Agent"])
 
 
-@router.get("/agent/audio/{log_id}/tts")
+@router.get(
+    "/agent/audio/{log_id}/tts",
+    dependencies=[Depends(require_device_token)],
+)
 async def get_tts_audio(log_id: str) -> Response:
     """Stream cached TTS bytes for ``log_id`` or return 404."""
     entry = tts_cache.get(log_id)

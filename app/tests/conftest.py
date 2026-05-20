@@ -112,6 +112,22 @@ def _no_outbound_network(monkeypatch):
     yield
 
 
+@pytest.fixture(autouse=True)
+def _disable_device_token_gate_by_default(monkeypatch):
+    """Default tests run with REQUIRE_DEVICE_TOKEN=False.
+
+    Production default is True. Each test that wants to exercise the
+    gate explicitly opts in via ``monkeypatch.setattr(settings,
+    "require_device_token", True)``. Without this autouse fixture, the
+    256 pre-Phase-12 audio tests would all need to be retrofitted with
+    a paired Device + ``X-Device-Token`` header.
+    """
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "require_device_token", False)
+    yield
+
+
 # ---------------------------------------------------------------------------
 # Database session fixture
 # ---------------------------------------------------------------------------
