@@ -968,7 +968,7 @@ suggestion.
 |---|---|---|
 | ESP32-S3 WROOM (8 MB PSRAM) | — | — |
 | TFT ILI9341 320×240 RGB565 | SPI shared | CS=14, DC=21, RST=47, MOSI=1, SCK=2, MISO=41 |
-| microSD card | SPI shared | CS=5, MOSI=1, SCK=2, MISO=41 |
+| microSD card | SDMMC 1-bit | CLK=39, CMD=38, D0=40 (Freenove on-board slot) |
 | Touch sensor (TTP223) | GPIO | OUT=4 (wake-from-idle) |
 | MPU6050 IMU | I2C | SDA=6, SCL=7 (shake-to-dizzy) |
 | INMP441 mic | I2S input | WS=15, BCLK=16, SD=17 (3.3 V only) |
@@ -976,10 +976,12 @@ suggestion.
 | Push-to-talk button | GPIO | 18 (`INPUT_PULLUP`, active LOW) |
 | Status LED | GPIO | 42 via 220 Ω resistor |
 
-The display + microSD share one SPI bus (MOSI=1, SCK=2, MISO=41) with
-distinct CS pins. Firmware MUST initialize a single `SPIClass` and
-pass it to both `Adafruit_ILI9341` and `SD.begin(SD_CS, SPI)` to avoid
-double-initialization races.
+The TFT and the on-board microSD slot use **separate buses**. The TFT
+runs on user SPI (MOSI=1, SCK=2, MISO=41), and the microSD uses the
+dedicated SDMMC peripheral on GPIO 38/39/40. There is no bus contention
+between display refresh and SD I/O. Firmware initializes
+`Adafruit_ILI9341` over `SPIClass` and `SD_MMC.begin("/sdcard", true)`
+in 1-bit mode independently.
 
 ### 14.1 Memory budget [NORMATIVE]
 

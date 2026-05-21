@@ -57,9 +57,13 @@
 #define LYLA_SPK_BCLK          9
 #define LYLA_SPK_DIN          10
 
-// 5. microSD (SPI shared with TFT).
-// MOSI/SCK/MISO are LYLA_TFT_*; do not redefine.
-#define LYLA_SD_CS             5
+// 5. microSD (on-board SDMMC slot on Freenove ESP32-S3 WROOM).
+// 1-bit SDMMC mode at the dedicated peripheral pins. NOT shared with
+// the TFT SPI bus, so there is no bus contention during simultaneous
+// audio playback + display refresh.
+#define LYLA_SD_CLK   39
+#define LYLA_SD_CMD   38
+#define LYLA_SD_D0    40
 
 // 6. Push-to-talk + status LED
 #define LYLA_PTT_PIN          18

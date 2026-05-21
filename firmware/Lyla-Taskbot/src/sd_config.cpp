@@ -1,8 +1,7 @@
 #include "sd_config.h"
 
 #include <ArduinoJson.h>
-#include <SD.h>
-#include <SPI.h>
+#include <SD_MMC.h>
 
 #include "config.h"
 
@@ -40,15 +39,16 @@ ConfigLoadOutcome fail(ConfigLoadResult code, const String& detail) {
 }
 
 ConfigLoadOutcome load_device_config(DeviceConfig& out) {
-  if (!SD.begin(LYLA_SD_CS)) {
+  SD_MMC.setPins(LYLA_SD_CLK, LYLA_SD_CMD, LYLA_SD_D0);
+  if (!SD_MMC.begin("/sdcard", true, false, BOARD_MAX_SDMMC_FREQ, 5)) {
     return fail(ConfigLoadResult::SDMountFailed, "");
   }
 
-  if (!SD.exists(kConfigPath)) {
+  if (!SD_MMC.exists(kConfigPath)) {
     return fail(ConfigLoadResult::FileMissing, kConfigPath);
   }
 
-  File f = SD.open(kConfigPath, FILE_READ);
+  File f = SD_MMC.open(kConfigPath, FILE_READ);
   if (!f) {
     return fail(ConfigLoadResult::FileMissing, kConfigPath);
   }

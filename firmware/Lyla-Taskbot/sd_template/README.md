@@ -1,8 +1,10 @@
 # microSD Card Template — Lyla / Taskbot ESP32-S3
 
-This folder is the **template content** for the microSD card that ships with
-each ESP32-S3 device. Copy these files to a fresh FAT32-formatted microSD
-(≥4 GB), fill in `config.json`, then insert the card into the device.
+This folder is the **template content** for the microSD card inserted
+into the **on-board slot** of the Freenove ESP32-S3 WROOM board.
+Format the card as FAT32, copy these files, then push the card into the
+on-board slot. The firmware uses the dedicated SDMMC peripheral
+(GPIO 39 CLK, 38 CMD, 40 D0); no external SD module needed.
 
 The firmware reads from the SD root, not from any subfolder beyond `/sounds/`.
 

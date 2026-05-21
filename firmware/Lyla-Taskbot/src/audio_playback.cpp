@@ -1,6 +1,6 @@
 #include "audio_playback.h"
 
-#include <SD.h>
+#include <SD_MMC.h>
 #include <driver/i2s.h>
 
 #include "config.h"
@@ -89,11 +89,11 @@ bool audio_playback_init() {
 bool audio_playback_play_sd(const char* path) {
   if (g_busy) return false;
   if (!path) return false;
-  if (!SD.exists(path)) {
+  if (!SD_MMC.exists(path)) {
     LYLA_WARN("audio_playback: missing %s", path);
     return false;
   }
-  File f = SD.open(path, FILE_READ);
+  File f = SD_MMC.open(path, FILE_READ);
   if (!f) {
     LYLA_WARN("audio_playback: open failed %s", path);
     return false;
