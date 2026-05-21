@@ -36,6 +36,7 @@ constexpr unsigned long kTouchDebounceMs = 45;
 constexpr unsigned long kSatisfiedHoldMs = 1400;
 
 bool g_last_button_state = false;
+bool g_last_button_raw = false;
 unsigned long g_button_changed_at = 0;
 constexpr unsigned long kButtonDebounceMs = 30;
 
@@ -106,15 +107,14 @@ void halt_with_message(const char* line1, const char* line2) {
 bool poll_button_pressed_edge() {
   bool raw = (digitalRead(LYLA_PTT_PIN) == LOW);
   unsigned long now = millis();
-  if (raw != g_last_button_state) {
-    if (now - g_button_changed_at >= kButtonDebounceMs) {
-      g_button_changed_at = now;
-      bool prev = g_last_button_state;
-      g_last_button_state = raw;
-      return raw && !prev;
-    }
-  } else {
+  if (raw != g_last_button_raw) {
+    g_last_button_raw = raw;
     g_button_changed_at = now;
+  }
+  if ((now - g_button_changed_at) >= kButtonDebounceMs &&
+      raw != g_last_button_state) {
+    g_last_button_state = raw;
+    return raw;
   }
   return false;
 }
@@ -122,15 +122,14 @@ bool poll_button_pressed_edge() {
 bool poll_button_released_edge() {
   bool raw = (digitalRead(LYLA_PTT_PIN) == LOW);
   unsigned long now = millis();
-  if (raw != g_last_button_state) {
-    if (now - g_button_changed_at >= kButtonDebounceMs) {
-      g_button_changed_at = now;
-      bool prev = g_last_button_state;
-      g_last_button_state = raw;
-      return !raw && prev;
-    }
-  } else {
+  if (raw != g_last_button_raw) {
+    g_last_button_raw = raw;
     g_button_changed_at = now;
+  }
+  if ((now - g_button_changed_at) >= kButtonDebounceMs &&
+      raw != g_last_button_state) {
+    g_last_button_state = raw;
+    return !raw;
   }
   return false;
 }
@@ -185,7 +184,11 @@ void setup() {
     LYLA_WARN("starting offline-only; wifi will retry in background");
   }
 
-  lyla::audio_playback_play_sd("/sounds/greet_hello.wav");
+  if (!lyla::audio_playback_play_sd("/sounds/greet_hello.wav")) {
+    LYLA_WARN("greet_hello.wav playback failed; check SD /sounds/ contents");
+  } else {
+    LYLA_LOG("greeting played; BMO ready");
+  }
 
   g_mpu.begin();
   calibrate_mpu();

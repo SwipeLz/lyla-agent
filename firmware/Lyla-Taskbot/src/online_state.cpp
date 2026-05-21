@@ -145,9 +145,11 @@ void online_on_button_pressed() {
     enter_error("Audio init error");
     return;
   }
+  LYLA_LOG("PTT pressed; recording...");
   audio_capture_start();
   g_record_started_at = millis();
   g_button_held = true;
+  set_server_face_override(ServerFace::Thinking, String("Mendengarkan..."));
   transition(OnlineState::Recording);
 }
 
@@ -160,10 +162,14 @@ void online_on_button_released() {
   uint32_t duration_ms = (uint32_t)(millis() - g_record_started_at);
   size_t recorded = audio_capture_stop();
   if (recorded == 0 || duration_ms < LYLA_MIN_RECORD_MS) {
+    LYLA_WARN("PTT released too soon (%ums); discarding", (unsigned)duration_ms);
     audio_capture_release();
+    clear_server_face_override();
     transition(OnlineState::Idle);
     return;
   }
+  LYLA_LOG("PTT released after %ums (%u bytes); sending...",
+           (unsigned)duration_ms, (unsigned)recorded);
   transition(OnlineState::Sending);
   send_audio_and_play(duration_ms);
 }
