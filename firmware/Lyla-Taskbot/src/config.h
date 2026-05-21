@@ -75,6 +75,16 @@
 #define LYLA_MIN_RECORD_MS           100
 #define LYLA_MAX_RECORD_BYTES   (LYLA_MAX_RECORD_MS * (LYLA_MIC_SAMPLE_RATE / 1000) * 2)
 
+// VAD (voice activity detection) for single-tap PTT mode.
+// LYLA_VAD_THRESHOLD: peak amplitude below which a chunk counts as silence
+//   (16-bit PCM, 0..32767). 800 ~= ambient room with quiet voice.
+// LYLA_VAD_SILENCE_MS: contiguous silence duration that auto-stops recording.
+// LYLA_VAD_PRIMING_MS: ignore silence for the first N ms so user has time
+//   to start speaking after pressing the button.
+#define LYLA_VAD_THRESHOLD       800
+#define LYLA_VAD_SILENCE_MS     1500
+#define LYLA_VAD_PRIMING_MS      800
+
 // 12 s TTS playback cap at 24 kHz mono = 576000 bytes.
 #define LYLA_MAX_TTS_BYTES        600000
 #define LYLA_MULTIPART_OVERHEAD_BYTES 2048

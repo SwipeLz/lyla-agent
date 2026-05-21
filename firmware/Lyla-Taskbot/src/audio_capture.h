@@ -24,4 +24,6 @@ void audio_capture_release();
 
 uint32_t audio_capture_sample_rate();
 
+uint16_t audio_capture_last_peak();
+
 }

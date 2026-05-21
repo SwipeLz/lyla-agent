@@ -14,6 +14,7 @@ size_t g_capacity_bytes = 0;
 size_t g_write_offset = 0;
 bool g_running = false;
 bool g_installed = false;
+uint16_t g_last_peak = 0;
 
 constexpr size_t kReadChunkSamples = 512;
 
@@ -96,12 +97,17 @@ bool audio_capture_pump() {
     bytes_pending = samples * sizeof(int16_t);
   }
   int16_t* dst = reinterpret_cast<int16_t*>(g_buffer + g_write_offset);
+  uint16_t peak = 0;
   for (size_t i = 0; i < samples; ++i) {
     int32_t s = raw[i] >> 14;
     if (s > 32767) s = 32767;
     if (s < -32768) s = -32768;
-    dst[i] = (int16_t)s;
+    int16_t v = (int16_t)s;
+    dst[i] = v;
+    uint16_t a = (uint16_t)(v < 0 ? -v : v);
+    if (a > peak) peak = a;
   }
+  g_last_peak = peak;
   g_write_offset += bytes_pending;
   return true;
 }

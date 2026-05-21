@@ -16,6 +16,7 @@ const DeviceConfig* g_cfg = nullptr;
 OnlineState g_state = OnlineState::Idle;
 unsigned long g_state_entered_at = 0;
 unsigned long g_record_started_at = 0;
+unsigned long g_record_last_voice_at = 0;
 unsigned long g_last_heartbeat_at = 0;
 
 bool g_button_held = false;
@@ -145,33 +146,19 @@ void online_on_button_pressed() {
     enter_error("Audio init error");
     return;
   }
-  LYLA_LOG("PTT pressed; recording...");
+  LYLA_LOG("PTT tap; recording until silence (max %ums)...",
+           (unsigned)LYLA_MAX_RECORD_MS);
   audio_capture_start();
-  g_record_started_at = millis();
+  unsigned long now = millis();
+  g_record_started_at = now;
+  g_record_last_voice_at = now;
   g_button_held = true;
   set_server_face_override(ServerFace::Thinking, String("Mendengarkan..."));
   transition(OnlineState::Recording);
 }
 
 void online_on_button_released() {
-  if (g_state != OnlineState::Recording) {
-    g_button_held = false;
-    return;
-  }
   g_button_held = false;
-  uint32_t duration_ms = (uint32_t)(millis() - g_record_started_at);
-  size_t recorded = audio_capture_stop();
-  if (recorded == 0 || duration_ms < LYLA_MIN_RECORD_MS) {
-    LYLA_WARN("PTT released too soon (%ums); discarding", (unsigned)duration_ms);
-    audio_capture_release();
-    clear_server_face_override();
-    transition(OnlineState::Idle);
-    return;
-  }
-  LYLA_LOG("PTT released after %ums (%u bytes); sending...",
-           (unsigned)duration_ms, (unsigned)recorded);
-  transition(OnlineState::Sending);
-  send_audio_and_play(duration_ms);
 }
 
 void online_loop(unsigned long now) {
@@ -188,22 +175,43 @@ void online_loop(unsigned long now) {
       break;
     }
     case OnlineState::Recording: {
-      if (g_button_held) {
-        bool ok = audio_capture_pump();
-        if (!ok) {
-          uint32_t dur = (uint32_t)(now - g_record_started_at);
-          audio_capture_stop();
-          g_button_held = false;
-          if (audio_capture_size_bytes() > 0 && dur >= LYLA_MIN_RECORD_MS) {
-            transition(OnlineState::Sending);
-            send_audio_and_play(dur);
-          } else {
-            audio_capture_release();
-            transition(OnlineState::Idle);
-          }
+      bool ok = audio_capture_pump();
+      uint32_t dur = (uint32_t)(now - g_record_started_at);
+
+      bool finish = false;
+      const char* finish_reason = nullptr;
+
+      if (!ok) {
+        finish = true;
+        finish_reason = "buffer full";
+      } else if (dur >= LYLA_MAX_RECORD_MS) {
+        finish = true;
+        finish_reason = "max duration";
+      } else if (dur >= LYLA_VAD_PRIMING_MS) {
+        uint16_t peak = audio_capture_last_peak();
+        if (peak >= LYLA_VAD_THRESHOLD) {
+          g_record_last_voice_at = now;
+        } else if (now - g_record_last_voice_at >= LYLA_VAD_SILENCE_MS) {
+          finish = true;
+          finish_reason = "silence";
         }
-        if (now - g_record_started_at >= LYLA_MAX_RECORD_MS) {
-          online_on_button_released();
+      }
+
+      if (finish) {
+        audio_capture_stop();
+        g_button_held = false;
+        if (audio_capture_size_bytes() > 0 && dur >= LYLA_MIN_RECORD_MS) {
+          LYLA_LOG("VAD stop (%s) after %ums (%u bytes)",
+                   finish_reason, (unsigned)dur,
+                   (unsigned)audio_capture_size_bytes());
+          transition(OnlineState::Sending);
+          send_audio_and_play(dur);
+        } else {
+          LYLA_WARN("recording too short (%ums); discard (%s)",
+                    (unsigned)dur, finish_reason);
+          audio_capture_release();
+          clear_server_face_override();
+          transition(OnlineState::Idle);
         }
       }
       break;
