@@ -1,0 +1,12 @@
+{
+  "user_id": "PASTE_FROM_DASHBOARD_PAIR_RESPONSE",
+  "device_id": "PASTE_FROM_DASHBOARD_PAIR_RESPONSE",
+  "device_code": "PASTE_FROM_DASHBOARD_PAIR_RESPONSE",
+  "device_token": "tk_live_PASTE_FROM_DASHBOARD_PAIR_RESPONSE",
+  "base_url": "https://lyla.example.com",
+  "wifi": {
+    "ssid": "YourWifiSSID",
+    "password": "YourWifiPassword"
+  },
+  "firmware_version": "0.1.0"
+}
