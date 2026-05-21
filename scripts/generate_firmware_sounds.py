@@ -3,7 +3,7 @@
 Reuses ``app.audio.tts_gemini.GeminiTtsProvider`` so the firmware sounds
 match the Gemini voice the dashboard already uses for fallback_tts.
 
-Output: ``firmware/sd_template/sounds/*.wav``
+Output: ``firmware/Lyla-Taskbot/sd_template/sounds/*.wav``
 
 Usage:
     python -m scripts.generate_firmware_sounds [--voice Leda] [--force]

@@ -5,7 +5,7 @@ troubleshooting the ESP32-S3 firmware in `firmware/`.
 
 **Contract source of truth:** [`docs/ESP32_INTEGRATION_CONTRACT.md`](ESP32_INTEGRATION_CONTRACT.md).
 **Decision log:** [`docs/ESP32_INTEGRATION_ADR.md`](ESP32_INTEGRATION_ADR.md).
-**SD card preparation:** [`firmware/sd_template/README.md`](../firmware/sd_template/README.md).
+**SD card preparation:** [`firmware/Lyla-Taskbot/sd_template/README.md`](../firmware/Lyla-Taskbot/sd_template/README.md).
 
 ---
 
@@ -81,9 +81,9 @@ ESP32-S3 board.
 - TFT ILI9341 320×240 SPI, INMP441 mic, MAX98357A speaker amp,
   microSD module, MPU6050, TTP223 touch sensor, push button, status LED.
 - Wiring per `taskbot_online_pinmap.md` (also documented in Contract §14
-  and `firmware/src/config.h`).
+  and `firmware/Lyla-Taskbot/src/config.h`).
 - microSD card formatted FAT32 with `config.json` and `/sounds/*.wav`
-  (see `firmware/sd_template/README.md`).
+  (see `firmware/Lyla-Taskbot/sd_template/README.md`).
 - Backend deployed and reachable over the URL you'll put in
   `config.json`.
 
@@ -172,7 +172,7 @@ below.
 ## First-run procedure (end-to-end)
 
 1. Build & flash the firmware (above).
-2. Prepare the SD card per `firmware/sd_template/README.md`. Specifically:
+2. Prepare the SD card per `firmware/Lyla-Taskbot/sd_template/README.md`. Specifically:
    - Pair the device on the dashboard, copy `config_json` into `/config.json` on the SD.
    - Fill `wifi.ssid` / `wifi.password`.
    - Place 10 WAV files in `/sounds/`.
