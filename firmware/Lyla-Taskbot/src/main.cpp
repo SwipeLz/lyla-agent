@@ -206,14 +206,16 @@ void loop() {
   if (touched) {
     g_last_touch_at = now;
   }
-  (void)g_last_touch_at;
-  (void)kSatisfiedHoldMs;
-  (void)g_calib_x;
-  (void)g_calib_y;
-  (void)g_shake_filtered;
-  (void)g_last_shake_at;
-  (void)kShakeTrigger;
-  (void)kShakeLockoutMs;
+
+  bool shake_hit = false;
+  if (g_mpu_ready &&
+      (now - g_last_shake_at > kShakeLockoutMs) &&
+      g_shake_filtered > kShakeTrigger) {
+    shake_hit = true;
+    g_last_shake_at = now;
+  }
+
+  lyla::offline_dispatch_inputs(touched, shake_hit);
 
   if (poll_button_pressed_edge()) {
     lyla::online_on_button_pressed();

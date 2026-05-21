@@ -517,6 +517,7 @@ void render_frame() {
   unsigned long now = millis();
   float t = (float)now;
   if (!g_fb) return;
+  update_transition();
   g_fb->fillRect(LYLA_FACE_ROI_X, LYLA_FACE_ROI_Y,
                  LYLA_FACE_ROI_W, LYLA_FACE_ROI_H, C_BG);
   float blink = current_blink_scale();
@@ -578,6 +579,93 @@ void clear_status_message() {
 
 void set_offline_input_suppressed(bool suppressed) {
   g_offline_input_suppressed = suppressed;
+}
+
+}
+
+namespace lyla {
+
+namespace {
+
+unsigned long g_last_touch_at = 0;
+unsigned long g_last_shake_at = 0;
+constexpr unsigned long kSatisfiedHoldMs = 1400;
+constexpr unsigned long kShakeLockoutMs = 900;
+
+void set_emotion(Emotion next) {
+  if (next == g_target && !g_in_transition) return;
+  if (g_in_transition) {
+    g_current = g_target;
+  }
+  g_from = g_current;
+  g_target = next;
+  g_transition_started_at = millis();
+  g_emo_started_at = millis();
+  g_in_transition = true;
+}
+
+void update_transition() {
+  if (!g_in_transition) return;
+  unsigned long now = millis();
+  if (now - g_transition_started_at >= LYLA_TFT_TRANSITION_MS) {
+    g_current = g_target;
+    g_from = g_target;
+    g_in_transition = false;
+  }
+}
+
+float current_transition_progress() {
+  if (!g_in_transition) return 1.0f;
+  unsigned long now = millis();
+  float t = (float)(now - g_transition_started_at) / (float)LYLA_TFT_TRANSITION_MS;
+  return ease_in_out(t);
+}
+
+bool can_interrupt_for_shake() {
+  return g_target == EMO_HAPPY || g_target == EMO_SATISFIED ||
+         g_target == EMO_ANGRY_IDLE;
+}
+
+void update_state_machine(bool touched, bool shake_hit) {
+  if (g_offline_input_suppressed) return;
+  unsigned long now = millis();
+
+  if (touched) {
+    g_last_touch_at = now;
+  }
+
+  if (can_interrupt_for_shake() &&
+      (now - g_last_shake_at > kShakeLockoutMs) && shake_hit) {
+    g_last_shake_at = now;
+    set_emotion(EMO_DIZZY);
+    return;
+  }
+
+  switch (g_target) {
+    case EMO_HAPPY:
+    case EMO_ANGRY_IDLE:
+      if (touched) set_emotion(EMO_SATISFIED);
+      break;
+    case EMO_SATISFIED:
+      if (!touched && (now - g_last_touch_at > kSatisfiedHoldMs)) {
+        set_emotion(EMO_HAPPY);
+      }
+      break;
+    case EMO_DIZZY:
+      if (now - g_emo_started_at >= 2000) set_emotion(EMO_ANGRY);
+      break;
+    case EMO_ANGRY:
+      if (now - g_emo_started_at >= 2000) set_emotion(EMO_ANGRY_IDLE);
+      break;
+    default:
+      break;
+  }
+}
+
+}
+
+void offline_dispatch_inputs(bool touched, bool shake_detected) {
+  update_state_machine(touched, shake_detected);
 }
 
 }

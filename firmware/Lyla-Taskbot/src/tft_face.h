@@ -35,4 +35,6 @@ void clear_status_message();
 
 void set_offline_input_suppressed(bool suppressed);
 
+void offline_dispatch_inputs(bool touched, bool shake_detected);
+
 }

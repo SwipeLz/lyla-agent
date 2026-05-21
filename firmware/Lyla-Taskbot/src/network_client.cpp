@@ -390,7 +390,19 @@ bool network_post_heartbeat(const DeviceConfig& cfg, bool online) {
   int code = http.POST(body);
   http.end();
   release_client(client);
-  return code == HTTP_CODE_OK;
+  if (code == HTTP_CODE_OK) {
+    LYLA_LOG("heartbeat OK device=%s rssi=%d",
+             cfg.device_code.c_str(), network_wifi_rssi());
+    return true;
+  }
+  if (code > 0) {
+    LYLA_WARN("heartbeat HTTP %d on %s/devices/%s/status",
+              code, cfg.base_url.c_str(), cfg.device_code.c_str());
+  } else {
+    LYLA_WARN("heartbeat network err %d (%s)",
+              code, HTTPClient::errorToString(code).c_str());
+  }
+  return false;
 }
 
 }
