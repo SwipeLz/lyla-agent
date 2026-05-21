@@ -209,19 +209,21 @@ def get_stats(
 @router.get("/devices", response_model=list[DeviceStatusOut])
 def list_devices(db: Session = Depends(get_db)) -> list[DeviceStatusOut]:
     rows = db.query(Device).all()
-    rows.sort(
-        key=lambda d: d.last_seen_at or datetime.min.replace(tzinfo=timezone.utc),
-        reverse=True,
-    )
     now = datetime.now(tz=timezone.utc)
     online_threshold = timedelta(seconds=60)
+    sort_floor = datetime.min.replace(tzinfo=timezone.utc)
+
+    def _aware(dt: datetime | None) -> datetime | None:
+        if dt is None:
+            return None
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+    rows.sort(key=lambda d: _aware(d.last_seen_at) or sort_floor, reverse=True)
 
     out: list[DeviceStatusOut] = []
     for device in rows:
-        is_online = (
-            device.last_seen_at is not None
-            and (now - device.last_seen_at) < online_threshold
-        )
+        last_seen = _aware(device.last_seen_at)
+        is_online = last_seen is not None and (now - last_seen) < online_threshold
         out.append(
             DeviceStatusOut(
                 id=device.id,
@@ -229,7 +231,7 @@ def list_devices(db: Session = Depends(get_db)) -> list[DeviceStatusOut]:
                 name=device.name,
                 status=device.status,
                 is_online=is_online,
-                last_seen_at=device.last_seen_at,
+                last_seen_at=last_seen,
                 firmware_version=device.firmware_version,
                 wifi_rssi_dbm=device.wifi_rssi_dbm,
                 battery_pct=device.battery_pct,

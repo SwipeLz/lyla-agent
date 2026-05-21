@@ -38,8 +38,8 @@ const formatTimeAgo = (iso: string | null | undefined): string => {
 
 const maskToken = (token: string | null | undefined): string => {
   if (!token) return "—";
-  if (token.length <= 12) return "•".repeat(token.length);
-  return `${token.slice(0, 8)}${"•".repeat(token.length - 12)}${token.slice(-4)}`;
+  const head = token.slice(0, 8);
+  return `${head}••••••••`;
 };
 
 export function DeviceDetailModal({
@@ -239,8 +239,8 @@ export function DeviceDetailModal({
               </FieldRow>
 
               <FieldRow label="Token">
-                <div className="flex flex-1 items-center justify-between gap-2">
-                  <code className="truncate font-mono text-xs text-slate-700">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <code className="min-w-0 flex-1 break-all font-mono text-xs text-slate-700">
                     {tokenVisible ? detail.api_token ?? "—" : maskToken(detail.api_token)}
                   </code>
                   <div className="flex shrink-0 gap-1">
