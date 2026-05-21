@@ -140,4 +140,8 @@ uint32_t audio_capture_sample_rate() {
   return LYLA_MIC_SAMPLE_RATE;
 }
 
+uint16_t audio_capture_last_peak() {
+  return g_last_peak;
+}
+
 }
