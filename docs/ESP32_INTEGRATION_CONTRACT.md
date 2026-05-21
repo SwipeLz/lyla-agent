@@ -135,7 +135,7 @@ Field-level rules:
 
 If any required field is missing, empty, or fails the validation rule,
 the firmware MUST:
-1. Render `Config error: <field>` on OLED (Indonesian: see §11).
+1. Render `Config error: <field>` on TFT (Indonesian: see §11).
 2. Halt the main loop. Do NOT attempt WiFi or any network call.
 3. Optionally blink the status LED red.
 
@@ -264,7 +264,7 @@ the firmware MUST set:
 X-Device-Token: <device_token from /sd/config.json>
 ```
 
-The token value MUST NOT appear in OLED text, serial logs at INFO level
+The token value MUST NOT appear in TFT text, serial logs at INFO level
 or higher, or any error message. DEBUG logs MAY include the first 6
 characters followed by `...` (e.g. `tk_liv...`).
 
@@ -286,7 +286,7 @@ characters followed by `...` (e.g. `tk_liv...`).
 - SSID/password from `wifi.ssid` / `wifi.password` in config.
 - Connection retry: exponential backoff starting at 1s, doubling, capped
   at 30s. Retry forever; do not give up.
-- During retry, OLED shows `WiFi terputus` and the firmware MUST NOT
+- During retry, TFT shows `WiFi terputus` and the firmware MUST NOT
   enter audio capture or playback states.
 - If WiFi was up and drops mid-request, the in-flight HTTP call MUST
   be aborted within 5 seconds and treated as timeout (see §6.4).
@@ -474,16 +474,16 @@ informational. The firmware MUST NOT pattern-match on `reply`,
 | Code | Meaning | Firmware action |
 |---|---|---|
 | 200 | success | proceed to §7 (directive dispatch) |
-| 400 | validation rejected (audio empty, bad ext, bad MIME) | err_generic, OLED `Rekaman bermasalah`, → IDLE |
-| 401 | missing or invalid `X-Device-Token` | err_generic, OLED `Device tidak terdaftar`, halt |
-| 404 | unknown `user_id` or `device_id` | err_generic, OLED `Akun belum siap`, halt |
-| 413 | audio file too large | err_generic, OLED `Rekaman terlalu panjang`, → IDLE |
-| 422 | malformed multipart | err_generic, OLED `Permintaan ditolak`, → IDLE |
-| 500 | agent runtime crashed | err_generic, OLED `Coba lagi sebentar`, → IDLE |
-| 502 | STT provider failure | err_generic, OLED `Coba lagi sebentar`, → IDLE |
-| (any other 5xx) | server error | err_generic, OLED `Server bermasalah`, → IDLE |
-| (any other 4xx) | reject | err_generic, OLED `Permintaan ditolak`, → IDLE |
-| (network timeout / no response) | server unreachable | err_generic, OLED `Server tidak responsif`, → IDLE |
+| 400 | validation rejected (audio empty, bad ext, bad MIME) | err_generic, TFT `Rekaman bermasalah`, → IDLE |
+| 401 | missing or invalid `X-Device-Token` | err_generic, TFT `Device tidak terdaftar`, halt |
+| 404 | unknown `user_id` or `device_id` | err_generic, TFT `Akun belum siap`, halt |
+| 413 | audio file too large | err_generic, TFT `Rekaman terlalu panjang`, → IDLE |
+| 422 | malformed multipart | err_generic, TFT `Permintaan ditolak`, → IDLE |
+| 500 | agent runtime crashed | err_generic, TFT `Coba lagi sebentar`, → IDLE |
+| 502 | STT provider failure | err_generic, TFT `Coba lagi sebentar`, → IDLE |
+| (any other 5xx) | server error | err_generic, TFT `Server bermasalah`, → IDLE |
+| (any other 4xx) | reject | err_generic, TFT `Permintaan ditolak`, → IDLE |
+| (network timeout / no response) | server unreachable | err_generic, TFT `Server tidak responsif`, → IDLE |
 
 In all cases the firmware also verifies `X-Lyla-Protocol: 1` on the
 response. Mismatch (header missing or value not `"1"`): treat as the
@@ -516,7 +516,7 @@ continue. It MUST NOT crash.
 
 ### 7.2 `face` enum (frozen)
 
-| Value | OLED rendering |
+| Value | TFT rendering |
 |---|---|
 | `happy` | smile pixmap |
 | `sad` | frown pixmap |
@@ -532,7 +532,7 @@ Unknown `face` values: render `neutral`.
 - May contain `\n` for line breaks. Other control characters: render
   as space.
 - Firmware MUST treat the string as opaque. No parsing, no regex.
-- If `null`: clear the text region of the OLED.
+- If `null`: clear the text region of the TFT.
 
 ### 7.4 `fetch_url`
 
@@ -634,7 +634,7 @@ or 24 kHz on the firmware side is forbidden.
 | Code | Meaning | Firmware action |
 |---|---|---|
 | 200 | audio bytes follow | parse WAV header, stream to I2S |
-| 401 | bad token | OLED `Device tidak terdaftar`, halt |
+| 401 | bad token | TFT `Device tidak terdaftar`, halt |
 | 404 | cache miss or expired (TTL 300 s) | err_generic, → IDLE |
 | (any 5xx) | provider/server error | err_generic, → IDLE |
 | (timeout) | network slow | err_generic, → IDLE |
@@ -725,8 +725,8 @@ The firmware SHOULD ignore the body. Heartbeat is fire-and-forget.
 | Code | Firmware action |
 |---|---|
 | 200 | continue |
-| 401 | OLED `Device tidak terdaftar`, halt |
-| 404 | OLED `Device tidak ditemukan`, halt |
+| 401 | TFT `Device tidak terdaftar`, halt |
+| 404 | TFT `Device tidak ditemukan`, halt |
 | (other) | log, retry next 60 s tick |
 
 The first heartbeat at boot is special: a 401 here MUST halt the
@@ -743,12 +743,12 @@ that the table marks **halt** stops further progress.
 
 | # | Step | On failure |
 |---|---|---|
-| 1 | Power on, init OLED | halt (no display = catastrophic) |
+| 1 | Power on, init TFT | halt (no display = catastrophic) |
 | 2 | Show splash `Lyla starting...` | — |
 | 3 | Mount SD card | halt: `SD card error` |
 | 4 | Read & validate `/sd/config.json` | halt: `Config error: <field>` |
 | 5 | Init I2S input (mic) and I2S output (speaker) | halt: `Audio init error` |
-| 6 | Init WiFi using `config.wifi` | retry forever, OLED `WiFi terputus` |
+| 6 | Init WiFi using `config.wifi` | retry forever, TFT `WiFi terputus` |
 | 7 | Send first heartbeat (`status: "online"`) | 401 → halt; 5xx → log, continue |
 | 8 | Play `/sd/sounds/greet_hello.wav` | log, continue |
 | 9 | Render `face_neutral` | — |
@@ -761,27 +761,33 @@ during boot MUST be discarded.
 
 Step 7 is the only network call before the user can interact. A 401
 here unambiguously means the SD card carries an invalid token. The
-firmware MUST halt with OLED `Device tidak terdaftar` and require
+firmware MUST halt with TFT `Device tidak terdaftar` and require
 re-pair. This prevents the user from triggering audio captures that
 will all fail authentication.
 
 ---
 
-## 11. OLED user-facing copy [NORMATIVE]
+## 11. TFT user-facing copy [NORMATIVE]
 
-All OLED messages MUST be in **Bahasa Indonesia**. They MUST NOT
+All TFT messages MUST be in **Bahasa Indonesia**. They MUST NOT
 contain HTTP status codes, English error names, stack traces, or token
 values.
 
 ### 11.1 Frozen message catalog
 
-| Trigger | OLED text (exact) |
+These messages MUST be rendered on the **TFT screen text region** (the
+strip below the BMO face area). Use the firmware's existing
+`Adafruit_GFX` text helpers; do NOT switch fonts or render libraries
+mid-flight.
+
+| Trigger | TFT text (exact) |
 |---|---|
 | Boot splash | `Lyla starting...` |
 | SD mount fail | `SD card error` |
 | Config field invalid | `Config error: <field>` (e.g. `Config error: base_url`) |
 | Audio init fail | `Audio init error` |
 | WiFi disconnected | `WiFi terputus` |
+| WiFi up but online unreachable mid-record | `Tidak ada internet` |
 | TLS / DNS failure | `Tidak bisa hubungi server` |
 | HTTP timeout | `Server tidak responsif` |
 | Bad protocol version | `Versi server beda` |
@@ -799,15 +805,19 @@ values.
 
 When `directive.screen_text` is non-null, it replaces the static
 message above for the duration of playback. After playback ends, the
-firmware returns to a neutral display (`face_neutral`, no text).
+firmware clears the screen text region and resumes the persistent
+offline emotion (per ADR-13). Server-driven `face` overrides also
+revert at this point.
 
-### 11.3 Truncation
+### 11.3 Layout & truncation
 
-The OLED line capacity is approximately 21 characters at 6×10 font on a
-128×64 panel. The server already truncates `screen_text` to 60 chars
-total with `…`. The firmware MUST honor newlines (`\n`) and SHOULD
-wrap long lines on word boundaries. Hard truncation past 60 chars is
-not the firmware's responsibility.
+TFT screen text region is 320 px wide × ~ 60 px tall, below the BMO
+face (face ROI defined in `tft_face.cpp`). At the default 6×10
+`Adafruit_GFX` font (text size 2 = 12×20 px), one row holds about 26
+characters. Server already truncates `screen_text` to 60 chars total
+with `…`; firmware honors `\n` for explicit line breaks and SHOULD
+wrap on whitespace. Hard truncation past 60 chars is not the
+firmware's responsibility.
 
 ---
 
@@ -836,7 +846,7 @@ not the firmware's responsibility.
 [PLAYING_RESPONSE]
   verify X-Lyla-Protocol: 1 (else -> [SHOWING_ERROR] mismatch)
   parse JSON, extract directive
-  render directive.face + directive.screen_text on OLED
+  render directive.face + directive.screen_text on TFT
   if audio_code == "fallback_tts":
     GET <base_url><directive.fetch_url>, buffer-then-play (24 kHz)
   else:
@@ -936,7 +946,7 @@ this before any production rollout beyond a single demo unit.
 The `X-Device-Token` is the single secret on the device. Firmware
 guarantees:
 - MUST NOT print the full token via `Serial.print`.
-- MUST NOT include the token in OLED text.
+- MUST NOT include the token in TFT text.
 - MUST NOT include the token in heartbeat or error telemetry.
 - MAY include the first 6 chars + `...` in DEBUG-level serial output
   for triage (e.g. `tk_liv...`).
@@ -946,48 +956,60 @@ If the token is compromised, the recovery procedure is documented in
 
 ---
 
-## 14. Hardware reference [INFORMATIVE]
+## 14. Hardware reference [NORMATIVE for pinmap, INFORMATIVE for the rest]
 
-This section is **non-binding**. The contract above does not depend on
-specific GPIO numbers — only on the I/O capabilities. The reference
-pinout below matches `docs/PHASE_11_FIRMWARE.md`.
+This section reflects the **actual** Taskbot/BMO ESP32-S3 hardware
+(see `taskbot_online_pinmap.md` for full rationale). The pinmap is now
+binding because firmware reuses the offline build's wiring; ADR-12
+records why this section diverges from the original Phase 11 TFT
+suggestion.
 
-| Component | Bus | Suggested pins |
+| Component | Bus | Pins (final) |
 |---|---|---|
-| ESP32-S3 dev board | — | — |
-| INMP441 mic | I2S input | WS=42, SCK=41, SD=2 |
-| MAX98357A speaker | I2S output | LRC=15, BCLK=16, DIN=17 |
-| microSD | SPI | MISO=37, MOSI=35, SCK=36, CS=39 |
-| OLED SSD1306 128×64 | I2C | SDA=8, SCL=9 |
-| Push-to-talk button | GPIO | 0 (with internal pullup) |
-| Status LED | GPIO | 21 (optional) |
+| ESP32-S3 WROOM (8 MB PSRAM) | — | — |
+| TFT ILI9341 320×240 RGB565 | SPI shared | CS=14, DC=21, RST=47, MOSI=1, SCK=2, MISO=41 |
+| microSD card | SPI shared | CS=5, MOSI=1, SCK=2, MISO=41 |
+| Touch sensor (TTP223) | GPIO | OUT=4 (wake-from-idle) |
+| MPU6050 IMU | I2C | SDA=6, SCL=7 (shake-to-dizzy) |
+| INMP441 mic | I2S input | WS=15, BCLK=16, SD=17 (3.3 V only) |
+| MAX98357A speaker amp | I2S output | LRC=8, BCLK=9, DIN=10 (5 V VIN) |
+| Push-to-talk button | GPIO | 18 (`INPUT_PULLUP`, active LOW) |
+| Status LED | GPIO | 42 via 220 Ω resistor |
+
+The display + microSD share one SPI bus (MOSI=1, SCK=2, MISO=41) with
+distinct CS pins. Firmware MUST initialize a single `SPIClass` and
+pass it to both `Adafruit_ILI9341` and `SD.begin(SD_CS, SPI)` to avoid
+double-initialization races.
 
 ### 14.1 Memory budget [NORMATIVE]
 
-The audio buffer is the dominant allocation. For 30 s of mono 16-bit
-PCM at 16 kHz: 30 × 16000 × 2 = 960 000 bytes.
-
-The ESP32-S3 reference design with 8 MB PSRAM allocates as follows:
+The audio buffer and the TFT framebuffer are the dominant allocations.
 
 | Region | Bytes | Notes |
 |---|---|---|
-| Audio capture buffer | 960 000 | `ps_malloc` in PSRAM |
-| TTS playback buffer | up to 600 000 | 12 s at 24 kHz mono 16-bit; PSRAM |
+| TFT framebuffer (`GFXcanvas16` 320×240) | 153 600 | heap; reused by offline + online rendering |
+| Audio capture buffer | 960 000 | `ps_malloc` in PSRAM (30 s mono 16-bit @ 16 kHz) |
+| TTS playback buffer | up to 600 000 | PSRAM (12 s mono 16-bit @ 24 kHz) |
 | Multipart preamble + trailer | ~ 1 500 | heap |
-| ArduinoJson document | 4 096 | heap (sized for the response shape) |
-| OLED frame buffer | 1 024 | 128 × 64 / 8 |
-| TLS handshake buffers | ~ 32 000 | reserved when `WiFiClientSecure` connects |
-| FreeRTOS task stacks | ~ 24 000 | 4 tasks at 6 KB each |
-| Application + libraries | balance | ~ 100 KB free heap remaining |
+| ArduinoJson document | 4 096 | heap (sized for response shape) |
+| TLS handshake buffers | ~ 32 000 | when `WiFiClientSecure` connects |
+| FreeRTOS task stacks | ~ 30 000 | 5 tasks at 6 KB each |
+| Application + libraries | balance | ~ 100 KB free heap floor |
 
-The firmware MUST NOT hold the audio capture buffer and the TTS
-playback buffer simultaneously. Capture buffer is freed before issuing
-the TTS GET. This keeps PSRAM peak below 1.6 MB.
+Hard rules:
+- Firmware MUST NOT hold the audio capture buffer and the TTS playback
+  buffer simultaneously. Capture buffer is freed before issuing the
+  TTS GET. PSRAM peak stays below 1.6 MB.
+- The TFT framebuffer is allocated once at boot and lives forever.
+  Offline + online rendering both write into this single buffer.
+- If `ps_malloc` returns null at boot, firmware halts with TFT
+  message "PSRAM tidak terdeteksi" (PlatformIO build flag
+  `-DBOARD_HAS_PSRAM` + `-DCONFIG_SPIRAM_USE_MALLOC` MUST be set).
 
 ### 14.2 Power [INFORMATIVE]
 
-USB power, 5 V / ≥ 1 A. Battery operation, deep sleep, and brown-out
-recovery are out of scope for this contract.
+USB power, 5 V / ≥ 1 A. MAX98357A draws up to 700 mA at peak. Battery
+operation, deep sleep, and brown-out recovery are out of scope.
 
 ---
 
@@ -1044,7 +1066,7 @@ complete.
 
 ### Boot
 - [ ] Read `/sd/config.json`; validate per §2.3
-- [ ] Halt with localized OLED message on any validation failure
+- [ ] Halt with localized TFT message on any validation failure
 - [ ] Connect WiFi using `config.wifi`; exponential backoff per §4.1
 - [ ] Send first heartbeat to `/devices/<device_code>/status`
 - [ ] Halt on 401 first heartbeat (`Device tidak terdaftar`)
@@ -1074,8 +1096,8 @@ complete.
 - [ ] No retries of `POST /agent/audio` (§6.4)
 
 ### Error paths
-- [ ] All OLED text in Bahasa Indonesia (§11.1)
-- [ ] No HTTP codes or stack traces on OLED
+- [ ] All TFT text in Bahasa Indonesia (§11.1)
+- [ ] No HTTP codes or stack traces on TFT
 - [ ] No token leakage at any log level
 - [ ] All paths (404, 401, 500, 502, timeout, JSON parse) handled
 - [ ] Never crash / panic; always return to IDLE or HALTED
@@ -1084,7 +1106,7 @@ complete.
 ### Security
 - [ ] HTTPS via `WiFiClientSecure.setInsecure()` for `https://`
 - [ ] Plain `WiFiClient` for `http://`
-- [ ] Token is in PSRAM/heap only, never serialized to OLED or logs
+- [ ] Token is in PSRAM/heap only, never serialized to TFT or logs
 
 ---
 

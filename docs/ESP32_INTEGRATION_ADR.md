@@ -534,3 +534,171 @@ Each Contract section is annotated with the ADR(s) that drive it.
 - The Contract document is updated to match the latest accepted ADR.
 - This file is co-located with the Contract and supersedes individual
   Phase 11/12 doc paragraphs that conflict with it.
+
+
+## ADR-12 - Display is TFT ILI9341 320x240, not OLED SSD1306
+
+### Context
+
+Contract §14 originally referenced an OLED SSD1306 128×64 I2C panel
+(SDA=8, SCL=9) inherited from Phase 11 docs. Reality (per
+`taskbot_online_pinmap.md` and the existing offline firmware "Smooth
+Offline v5"): the device uses an Adafruit ILI9341 320×240 RGB565 TFT
+on a shared SPI bus with the microSD card.
+
+Two structural consequences:
+
+1. GPIO 8/9 (formerly OLED I2C) are now MAX98357A I2S output
+   (LRC/BCLK). The I2S audio output works because OLED is gone.
+2. Display memory is now ~150 KB framebuffer (320 * 240 * 2 bytes),
+   not 1 KB. Rendering is RGB565 procedural drawing on a
+   `GFXcanvas16`, not XBM bitmap blit.
+
+The existing offline firmware already handles all TFT rendering for
+five emotion states (HAPPY, SATISFIED, DIZZY, ANGRY, ANGRY_IDLE) using
+`Adafruit_ILI9341` + `GFXcanvas16` + procedural draw helpers. Online
+firmware must reuse this rendering pipeline rather than introduce a
+parallel one.
+
+### Decision
+
+The TFT ILI9341 is the canonical display. Online firmware reuses the
+offline rendering pipeline:
+
+- `Adafruit_ILI9341` for hardware-level SPI driving.
+- `GFXcanvas16` (heap-backed) as offscreen framebuffer.
+- `Adafruit_GFX` for text + primitive shapes.
+- ROI streaming (`pushFaceROI`) for fast face updates.
+- Indonesian-language `screen_text` rendered via `Adafruit_GFX`
+  text functions, NOT u8g2.
+
+Contract §14 hardware reference is updated to reflect TFT pinout.
+Contract §11 OLED catalog becomes "TFT screen text catalog"; same
+copy, different rendering target.
+
+ADR-5 (OLED XBM pixmaps in firmware) is **superseded by ADR-12**.
+Server-driven faces (`happy`, `sad`, `thinking`, `neutral`)
+are rendered procedurally on the GFXcanvas, not as static XBM blits.
+This costs ~3 KB extra flash for face drawing helpers but unifies
+rendering with the offline emotion state machine, avoiding a parallel
+graphics path.
+
+### Consequences
+
+- Memory budget §14.1 amended: ~150 KB heap framebuffer reserved.
+  Audio buffer (PSRAM) is unaffected. Total RAM ceiling under 1.7 MB
+  peak.
+- Online face rendering shares helpers with offline (eyes, mouth,
+  brow primitives in `tft_face.cpp`).
+- The 7-frame "thinking" face animation is implemented as procedural
+  bouncing dots on the GFXcanvas, not multi-XBM cycling.
+- The screen never goes dark during PLAYING_RESPONSE — server text is
+  layered into the existing TFT face region.
+
+### Alternatives considered
+
+- **Bring back OLED on a different I2C pair (e.g. GPIO 38/39).**
+  Rejected: GPIO 38-40 are reserved (internal SD/SDIO). Adding I2C
+  fights the pinmap.
+- **Keep OLED + TFT both.** Rejected: doubles BOM cost, doubles
+  rendering paths, doesn't help users.
+- **Render online faces as XBM and blit on TFT.** Rejected: TFT is
+  RGB565, XBM is monochrome — looks visibly out of place next to
+  procedural offline faces.
+
+---
+
+## ADR-13 - Offline + online coexistence: single firmware, layered state
+
+### Context
+
+The user already shipped "Smooth Offline v5", an Arduino-IDE firmware
+with a complete emotion state machine driven by touch sensor (GPIO4)
+and MPU6050 shake detection. That firmware is the baseline and works.
+
+User requirement (verbatim): "kedua mode itu berdampingan. Offline
+bekerja sebagai fallback dari online jadi offline features always-on.
+Fitur online auto-aktif kalau wifi tersedia, nantinya ada juga
+perilaku bmo yang memberitahu gabisa akses fitur online karena tidak
+ada internet."
+
+Roles per pinmap:
+- Touch sensor (GPIO4) = wake-from-idle (offline)
+- PTT button (GPIO18) = record audio (online only)
+- MPU6050 = shake-to-dizzy (offline)
+- INMP441 / MAX98357A / SD = online features
+
+Constraint: A breaking change to offline behavior is unacceptable.
+Online integration MUST NOT regress shake-to-dizzy, touch-to-satisfied,
+or any Smooth-v5 timing.
+
+### Decision
+
+Single firmware with a **two-tier state machine**:
+
+1. **Offline tier** (always running): the Smooth-v5 emotion state
+   machine. Touch + shake input continue to drive emotion transitions
+   exactly as today.
+
+2. **Online tier** (overlay): a new state machine for the audio
+   request lifecycle: `[ONLINE_IDLE] -> [RECORDING] -> [SENDING] ->
+   [PLAYING_RESPONSE] -> [SHOWING_ERROR] -> [ONLINE_IDLE]`. While
+   online tier is in any non-idle state, offline emotion transitions
+   are **suppressed** (input ignored, current emotion held).
+
+3. **WiFi tier** (background): WiFi connection state is tracked
+   continuously. If WiFi is unavailable when the user presses PTT
+   button, the firmware enters a transient `[OFFLINE_NOTICE]` online
+   state: BMO shows `EMO_SAD` for ~2 seconds with TFT text "Tidak
+   ada internet". Then both tiers resume normal operation.
+
+Server-driven directives (`directive.face` from
+`POST /agent/audio` response) become **temporary face overrides**
+during `[PLAYING_RESPONSE]`. They do NOT modify the persistent
+offline emotion. After playback ends, the offline emotion that was
+active resumes its render.
+
+Mapping from Contract `face` enum to firmware emotion overrides:
+
+| Contract `face` | Override emotion |
+|---|---|
+| `happy` | `EMO_SERVER_HAPPY` (uses HAPPY visuals, no autonomous blink/look) |
+| `sad` | `EMO_SERVER_SAD` (new: droopy eyes + downturned mouth) |
+| `thinking` | `EMO_SERVER_THINKING` (new: bouncing dots beneath eyes) |
+| `neutral` | `EMO_SERVER_NEUTRAL` (HAPPY visuals, no breath bob) |
+
+Indonesian `directive.screen_text` is rendered above or beside the
+face as monospace text (per Contract §11.2), then cleared on
+`[ONLINE_IDLE]` re-entry.
+
+### Consequences
+
+- Existing offline .ino becomes the visual core. Online firmware
+  imports the same draw helpers.
+- New code is purely additive: WiFi manager, audio capture / playback,
+  network client, directive dispatcher, heartbeat timer, online state
+  machine. Total ~1500 lines of new C++ across 12 files.
+- Failure modes are graceful: WiFi down = offline still works.
+  Audio hardware down = offline still works (firmware logs +
+  shows error face but does not halt).
+- Touch debounce, MPU6050 calibration, blink/look animations are
+  **unchanged** from Smooth-v5.
+
+### Alternatives considered
+
+- **Two separate firmwares with NVS-stored mode toggle.** Rejected by
+  user explicitly: doesn't want hard separation.
+- **Online firmware replaces offline (deprecate offline).** Rejected:
+  loses the existing investment in BMO emotion polish; loses the
+  "BMO is alive" UX when WiFi is down.
+- **Online runs as a FreeRTOS task entirely separate from offline
+  loop().** Considered. Rejected for v1 because shared TFT framebuffer
+  needs a single render task. Multi-task is a possible v2 refactor.
+
+### Followup ADR (when shipped)
+
+ADR-13b: when stream-while-playing TTS lands (ADR-6 superseded), the
+`[PLAYING_RESPONSE]` state needs reentrancy guards on the I2S output
+because chunked TLS stalls could flush a partial frame.
+
+---
