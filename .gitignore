@@ -30,3 +30,6 @@ app/agent/.adk/
 sample.wav
 test_command.wav
 gemini_tts_probe_*.wav
+
+# Generated SD card config (contains device_token secret)
+firmware/Lyla-Taskbot/sd_template/config.json
