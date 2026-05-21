@@ -47,9 +47,11 @@ from app.models.device_command import DeviceCommand
 from app.models.user import User
 from app.schemas.devices import (
     AckResponse,
+    DeviceDetailOut,
     DevicePairRequest,
     DevicePairResponse,
     DeviceStatusUpdate,
+    DeviceUpdateRequest,
     PendingCommandOut,
 )
 from app.services import device_service
@@ -243,3 +245,81 @@ def pair_device(
         api_token=device.api_token or "",
         config_json=config_json,
     )
+
+
+def _to_detail(device) -> DeviceDetailOut:
+    return DeviceDetailOut(
+        id=device.id,
+        device_code=device.device_code,
+        name=device.name,
+        status=device.status,
+        api_token=device.api_token,
+        last_seen_at=device.last_seen_at.isoformat() if device.last_seen_at else None,
+        firmware_version=device.firmware_version,
+        wifi_rssi_dbm=device.wifi_rssi_dbm,
+        battery_pct=device.battery_pct,
+        free_heap_bytes=device.free_heap_bytes,
+        created_at=device.created_at.isoformat() if device.created_at else None,
+    )
+
+
+@router.get(
+    "/devices/id/{device_id}",
+    response_model=DeviceDetailOut,
+    dependencies=[Depends(require_session)],
+)
+def get_device_detail(
+    device_id: str,
+    db: Session = Depends(get_db),
+) -> DeviceDetailOut:
+    try:
+        device = device_service.get_device_by_id(db, device_id)
+    except NotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device tidak ditemukan",
+        )
+    return _to_detail(device)
+
+
+@router.patch(
+    "/devices/id/{device_id}",
+    response_model=DeviceDetailOut,
+    dependencies=[Depends(require_session)],
+)
+def update_device(
+    device_id: str,
+    payload: DeviceUpdateRequest,
+    db: Session = Depends(get_db),
+) -> DeviceDetailOut:
+    try:
+        device = device_service.update_device_name(db, device_id, payload.name)
+    except NotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device tidak ditemukan",
+        )
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    return _to_detail(device)
+
+
+@router.delete(
+    "/devices/id/{device_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_session)],
+)
+def delete_device(
+    device_id: str,
+    db: Session = Depends(get_db),
+) -> None:
+    try:
+        device_service.delete_device(db, device_id)
+    except NotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device tidak ditemukan",
+        )

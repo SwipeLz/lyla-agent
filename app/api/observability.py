@@ -208,10 +208,10 @@ def get_stats(
 
 @router.get("/devices", response_model=list[DeviceStatusOut])
 def list_devices(db: Session = Depends(get_db)) -> list[DeviceStatusOut]:
-    rows = (
-        db.query(Device)
-        .order_by(Device.last_seen_at.desc().nullslast())
-        .all()
+    rows = db.query(Device).all()
+    rows.sort(
+        key=lambda d: d.last_seen_at or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True,
     )
     now = datetime.now(tz=timezone.utc)
     online_threshold = timedelta(seconds=60)

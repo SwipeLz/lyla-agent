@@ -6,6 +6,7 @@ import { LoadingState } from "../components/LoadingState";
 import { ErrorState } from "../components/ErrorState";
 import { DeviceCard } from "../components/devices/DeviceCard";
 import { PairDeviceModal } from "../components/devices/PairDeviceModal";
+import { DeviceDetailModal } from "../components/devices/DeviceDetailModal";
 import { EmptyState } from "../components/EmptyState";
 import { BmoButton } from "../components/bmo/BmoButton";
 
@@ -17,6 +18,7 @@ export function DevicesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
   const load = async (uid: string) => {
     setLoading(true);
@@ -72,7 +74,11 @@ export function DevicesPage() {
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
             {devices.map((d) => (
-              <DeviceCard key={d.id} device={d} />
+              <DeviceCard
+                key={d.id}
+                device={d}
+                onClick={() => setSelectedDevice(d)}
+              />
             ))}
           </div>
         )
@@ -82,6 +88,14 @@ export function DevicesPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSuccess={() => userId && void load(userId)}
+      />
+
+      <DeviceDetailModal
+        open={selectedDevice !== null}
+        device={selectedDevice}
+        onClose={() => setSelectedDevice(null)}
+        onChanged={() => userId && void load(userId)}
+        onDeleted={() => userId && void load(userId)}
       />
     </section>
   );

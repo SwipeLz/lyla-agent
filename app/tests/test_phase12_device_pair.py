@@ -117,3 +117,84 @@ def test_no_rotate_token_endpoint_exists(client, seed_demo_user):
     pair = client.post("/devices/pair", json={"name": "Lyla Demo Unit"}).json()
     response = client.post(f"/devices/{pair['device_id']}/rotate-token")
     assert response.status_code == 404
+
+
+def test_get_device_detail_without_session_returns_401(client, seed_demo_user):
+    _login(client)
+    pair = client.post("/devices/pair", json={"name": "Lyla"}).json()
+    client.post("/auth/logout")
+    response = client.get(f"/devices/id/{pair['device_id']}")
+    assert response.status_code == 401
+
+
+def test_get_device_detail_returns_token(client, seed_demo_user):
+    _login(client)
+    pair = client.post("/devices/pair", json={"name": "Lyla"}).json()
+    response = client.get(f"/devices/id/{pair['device_id']}")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == pair["device_id"]
+    assert body["device_code"] == pair["device_code"]
+    assert body["api_token"] == pair["api_token"]
+    assert body["name"] == "Lyla"
+
+
+def test_get_device_detail_unknown_id_returns_404(client, seed_demo_user):
+    _login(client)
+    response = client.get(f"/devices/id/{uuid4()}")
+    assert response.status_code == 404
+
+
+def test_patch_device_renames_without_changing_token_or_code(
+    client, seed_demo_user
+):
+    _login(client)
+    pair = client.post("/devices/pair", json={"name": "Lyla"}).json()
+    response = client.patch(
+        f"/devices/id/{pair['device_id']}", json={"name": "Lyla Baru"}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["name"] == "Lyla Baru"
+    assert body["device_code"] == pair["device_code"]
+    assert body["api_token"] == pair["api_token"]
+
+
+def test_patch_device_blank_name_returns_422(client, seed_demo_user):
+    _login(client)
+    pair = client.post("/devices/pair", json={"name": "Lyla"}).json()
+    response = client.patch(
+        f"/devices/id/{pair['device_id']}", json={"name": "   "}
+    )
+    assert response.status_code == 422
+
+
+def test_patch_device_unknown_id_returns_404(client, seed_demo_user):
+    _login(client)
+    response = client.patch(
+        f"/devices/id/{uuid4()}", json={"name": "Anything"}
+    )
+    assert response.status_code == 404
+
+
+def test_delete_device_returns_204_and_removes_row(client, seed_demo_user):
+    _login(client)
+    pair = client.post("/devices/pair", json={"name": "Lyla"}).json()
+    response = client.delete(f"/devices/id/{pair['device_id']}")
+    assert response.status_code == 204
+    follow_up = client.get(f"/devices/id/{pair['device_id']}")
+    assert follow_up.status_code == 404
+
+
+def test_delete_device_unknown_id_returns_404(client, seed_demo_user):
+    _login(client)
+    response = client.delete(f"/devices/id/{uuid4()}")
+    assert response.status_code == 404
+
+
+def test_delete_device_without_session_returns_401(client, seed_demo_user):
+    _login(client)
+    pair = client.post("/devices/pair", json={"name": "Lyla"}).json()
+    client.post("/auth/logout")
+    response = client.delete(f"/devices/id/{pair['device_id']}")
+    assert response.status_code == 401

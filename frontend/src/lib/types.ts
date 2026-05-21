@@ -117,6 +117,24 @@ export interface DevicePairResponse {
   config_json: Record<string, unknown>;
 }
 
+export interface DeviceDetailOut {
+  id: string;
+  device_code: string;
+  name: string;
+  status: string;
+  api_token: string | null;
+  last_seen_at: string | null;
+  firmware_version?: string | null;
+  wifi_rssi_dbm?: number | null;
+  battery_pct?: number | null;
+  free_heap_bytes?: number | null;
+  created_at?: string | null;
+}
+
+export interface DeviceUpdateRequest {
+  name: string;
+}
+
 export interface StageTimings {
   validate?: number | null;
   stt?: number | null;

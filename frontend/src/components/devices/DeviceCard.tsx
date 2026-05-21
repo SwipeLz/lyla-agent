@@ -6,14 +6,20 @@ type CardDevice = Device | DeviceStatusOut;
 
 interface DeviceCardProps {
   device: CardDevice;
+  onClick?: () => void;
 }
 
 const isStatusOut = (d: CardDevice): d is DeviceStatusOut =>
   "is_online" in d;
 
+const parseUtcIso = (iso: string): number => {
+  const hasTz = /Z|[+-]\d{2}:?\d{2}$/.test(iso);
+  return new Date(hasTz ? iso : `${iso}Z`).getTime();
+};
+
 const formatTimeAgo = (iso: string | null): string => {
   if (!iso) return "belum pernah";
-  const then = new Date(iso).getTime();
+  const then = parseUtcIso(iso);
   if (Number.isNaN(then)) return iso;
   const diff = Date.now() - then;
   if (diff < 60_000) return "baru saja";
@@ -22,7 +28,7 @@ const formatTimeAgo = (iso: string | null): string => {
   return `${Math.floor(diff / 86400_000)} hari lalu`;
 };
 
-export function DeviceCard({ device }: DeviceCardProps) {
+export function DeviceCard({ device, onClick }: DeviceCardProps) {
   const isOnline = isStatusOut(device)
     ? device.is_online
     : device.status === "online";
@@ -32,8 +38,20 @@ export function DeviceCard({ device }: DeviceCardProps) {
   const rssi = isStatusOut(device) ? device.wifi_rssi_dbm : device.wifi_rssi_dbm;
   const battery = isStatusOut(device) ? device.battery_pct : device.battery_pct;
 
+  const interactive = typeof onClick === "function";
+  const Tag = interactive ? "button" : "div";
+
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-bmo-border bg-surface-elev p-4">
+    <Tag
+      type={interactive ? "button" : undefined}
+      onClick={onClick}
+      className={
+        "flex w-full items-center gap-4 rounded-lg border border-bmo-border bg-surface-elev p-4 text-left" +
+        (interactive
+          ? " cursor-pointer transition hover:border-bmo-mouth hover:bg-bmo-screen/30 focus:outline-none focus:ring-2 focus:ring-bmo-mouth/40"
+          : "")
+      }
+    >
       <BmoMascot size={48} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -52,6 +70,6 @@ export function DeviceCard({ device }: DeviceCardProps) {
           <span>last seen {formatTimeAgo(device.last_seen_at)}</span>
         </div>
       </div>
-    </div>
+    </Tag>
   );
 }

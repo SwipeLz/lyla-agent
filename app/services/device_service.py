@@ -209,3 +209,49 @@ def update_telemetry(
     db.commit()
     db.refresh(device)
     return device
+
+
+def get_device_by_id(db: Session, device_id: str) -> Device:
+    """Return the ``Device`` row whose primary key matches ``device_id``.
+
+    Raises ``NotFoundError`` if no such device exists.
+    """
+    device = db.query(Device).filter(Device.id == device_id).one_or_none()
+    if device is None:
+        raise NotFoundError(f"Device {device_id!r} not found")
+    return device
+
+
+def update_device_name(db: Session, device_id: str, name: str) -> Device:
+    """Rename the device. ``device_code`` and ``api_token`` are immutable
+    here so paired ESP firmware keeps working.
+
+    - ``NotFoundError`` if the device does not exist.
+    - ``ValidationError`` if ``name`` is not a non-blank string.
+    """
+    if not isinstance(name, str) or not name.strip():
+        raise ValidationError("name must be a non-blank string")
+
+    device = get_device_by_id(db, device_id)
+    device.name = name.strip()
+    db.commit()
+    db.refresh(device)
+    return device
+
+
+def delete_device(db: Session, device_id: str) -> None:
+    """Delete a device.
+
+    ``VoiceCommandLog.device_id`` rows that reference this device are
+    nulled before the row is removed so historical audit logs stay
+    queryable. ``DeviceCommand`` rows cascade-delete via the ORM
+    relationship.
+    """
+    from app.models.voice_command_log import VoiceCommandLog
+
+    device = get_device_by_id(db, device_id)
+    db.query(VoiceCommandLog).filter(
+        VoiceCommandLog.device_id == device.id
+    ).update({VoiceCommandLog.device_id: None}, synchronize_session=False)
+    db.delete(device)
+    db.commit()

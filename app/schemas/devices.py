@@ -100,3 +100,29 @@ class DevicePairResponse(BaseModel):
     device_code: str
     api_token: str
     config_json: dict
+
+
+class DeviceDetailOut(BaseModel):
+    """Detail view for one device, returned by ``GET /devices/{device_id}``.
+
+    Includes ``api_token`` so the operator can copy it back into a fresh
+    ``config.json`` if the SD card is lost. Endpoint is session-gated so
+    the token never leaves the authenticated dashboard origin.
+    """
+
+    id: str
+    device_code: str
+    name: str
+    status: str
+    api_token: str | None = None
+    last_seen_at: str | None = None
+    firmware_version: str | None = None
+    wifi_rssi_dbm: int | None = None
+    battery_pct: int | None = None
+    free_heap_bytes: int | None = None
+    created_at: str | None = None
+
+
+class DeviceUpdateRequest(BaseModel):
+    name: str = Field(..., description="New device label.")
+

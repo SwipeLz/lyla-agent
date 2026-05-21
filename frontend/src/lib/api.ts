@@ -6,9 +6,11 @@ import {
   AuthRequiredError,
   DashboardSummary,
   Device,
+  DeviceDetailOut,
   DevicePairRequest,
   DevicePairResponse,
   DeviceStatusOut,
+  DeviceUpdateRequest,
   Expense,
   ExpenseCreateInput,
   LoginRequest,
@@ -155,6 +157,30 @@ export const pairDevice = (
   request<DevicePairResponse>(`/devices/pair`, {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+
+export const getDeviceDetail = (
+  deviceId: string,
+): Promise<DeviceDetailOut> =>
+  request<DeviceDetailOut>(
+    `/devices/id/${encodeURIComponent(deviceId)}`,
+  );
+
+export const updateDevice = (
+  deviceId: string,
+  payload: DeviceUpdateRequest,
+): Promise<DeviceDetailOut> =>
+  request<DeviceDetailOut>(
+    `/devices/id/${encodeURIComponent(deviceId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+  );
+
+export const deleteDevice = (deviceId: string): Promise<void> =>
+  request<void>(`/devices/id/${encodeURIComponent(deviceId)}`, {
+    method: "DELETE",
   });
 
 export const getRecent = (params?: {
