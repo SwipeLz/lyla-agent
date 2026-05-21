@@ -1,5 +1,11 @@
 # Phase 12 — ESP32 Brief: Integration Readiness
 
+> **SUPERSEDED IN PART by [`../ESP32_INTEGRATION_CONTRACT.md`](../ESP32_INTEGRATION_CONTRACT.md).**
+> Where this brief and the Contract disagree, the Contract wins.
+> Notable resolutions: `base_url` HTTP vs HTTPS (ADR-1), the dual
+> `X-Device-Token` mechanism (ADR-11), and `fetch_url` construction
+> (ADR-10). The Contract is the firmware author's primary reference.
+
 This brief covers ESP32-S3 firmware additions needed to integrate with the Phase 12 backend (observability + simple auth + device pairing). Refer to [`docs/PHASE_11_FIRMWARE.md`](../PHASE_11_FIRMWARE.md) for the foundational firmware spec (I2S, WAV files, state machine, OLED rendering).
 
 ## What's new in Phase 12 (additive only)

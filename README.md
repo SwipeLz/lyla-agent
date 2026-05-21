@@ -14,7 +14,7 @@ The Minimum Viable Product (MVP) focuses on a text-command-based backend system 
 ## Development Phases Summary
 The project is divided into 14 phases, starting from backend skeleton and database design, progressing to the Google ADK agent integration, and eventually adding the dashboard, hardware prototype, audio processing, and WhatsApp notifications.
 
-**Current Phase:** Phase 10 (Audio Backend Foundation) — `POST /agent/audio` accepts multipart upload, fake STT returns deterministic transcript, fake TTS emits silent WAV via stdlib. Phases 0–9 complete with 230/230 tests passing. Real STT/TTS provider deferred to Phase 10.5.
+**Current Phase:** Phase 13 shipped (frontend BMO redesign on top of Phase 12 backend). Backend regression: 310/310 tests passing. **ESP32-S3 firmware integration is the next milestone** — the normative contract lives at [`docs/ESP32_INTEGRATION_CONTRACT.md`](docs/ESP32_INTEGRATION_CONTRACT.md) with rationale at [`docs/ESP32_INTEGRATION_ADR.md`](docs/ESP32_INTEGRATION_ADR.md). For phase-level history see [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Backend Development
 

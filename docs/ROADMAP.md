@@ -79,7 +79,9 @@
 - **Objective:** Build the ESP32-S3 firmware that captures audio, posts to `/agent/audio`, plays response per `directive.audio_code`.
 - **Main Steps:** I2S input/output, microSD WAV cache, OLED face/screen rendering, WiFi + `WiFiClientSecure` + `setInsecure()`, state machine, JSON parser, telemetry fields, `X-Device-Token` header.
 - **Milestone:** End-to-end voice interaction with hardware (record button → speech → DB update → speaker reply).
-- **Brief:** [`docs/phase-12/ESP_BRIEF.md`](phase-12/ESP_BRIEF.md).
+- **Contract (normative):** [`docs/ESP32_INTEGRATION_CONTRACT.md`](ESP32_INTEGRATION_CONTRACT.md).
+- **Decision log:** [`docs/ESP32_INTEGRATION_ADR.md`](ESP32_INTEGRATION_ADR.md).
+- **Brief (superseded in part):** [`docs/phase-12/ESP_BRIEF.md`](phase-12/ESP_BRIEF.md).
 
 ## Phase 12: Observability Dashboard + Simple Auth (Backend)
 - **Status:** Shipped. Internet-safe single-user auth (scrypt-hashed, in-memory sessions, login rate-limit), device pairing flow, stage-by-stage telemetry capture, 4 observability endpoints (trace/recent/stats/devices), extended heartbeat schema, default-on `X-Device-Token` gate.

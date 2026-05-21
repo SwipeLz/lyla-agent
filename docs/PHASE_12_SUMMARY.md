@@ -1,8 +1,8 @@
 # Phase 12 — Observability Dashboard + Simple Auth (Backend) — SHIPPED
 
-**Status**: backend done. Frontend (`/login`, `/observability`, "Pair New Device" modal) is a separate follow-up.
+**Status**: backend done. Frontend follow-up shipped in Phase 13 (`/login`, `/observability`, "Pair New Device" modal).
 
-**Test count**: 305 passed (256 baseline + 49 new Phase 12 tests).
+**Test count**: 310 passed.
 
 ## What shipped
 
@@ -34,8 +34,8 @@
   - Error path also writes metadata with `error.layer`
 
 - **Device-token gate**
-  - `REQUIRE_DEVICE_TOKEN=true` (default ON) makes `X-Device-Token` mandatory for protected endpoints
-  - `app/api/_auth_dependencies.require_device_token` available as FastAPI dependency
+  - `REQUIRE_DEVICE_TOKEN=true` (default ON) makes `X-Device-Token` mandatory for protected device/audio endpoints
+  - `POST /agent/audio` and `GET /agent/audio/{log_id}/tts` are wired to `app/api/_auth_dependencies.require_device_token`
 
 - **CLI helper**
   - `python -m scripts.hash_dashboard_password [--password X]` — generate `<salt_hex>:<hash_hex>` for `.env`
@@ -114,7 +114,7 @@ curl http://127.0.0.1:8765/observability/devices -b cookies.txt
 
 | Gate | Command | Expected |
 |---|---|---|
-| Full regression | `python -m pytest -q` | `305 passed` |
+| Full regression | `python -m pytest -q` | `310 passed` |
 | Migration round-trip | `alembic upgrade head; alembic downgrade -1; alembic upgrade head` | clean |
 | No new dependency | `findstr /R "bcrypt jwt argon passlib" requirements.txt` | no matches |
 | No rotate-token | `findstr /S "rotate-token rotate_token" app\api\` | no matches |
@@ -123,7 +123,7 @@ curl http://127.0.0.1:8765/observability/devices -b cookies.txt
 ## Known issues
 
 - `Device.api_token` was added by Phase 12 migration. Devices created before Phase 12 have `api_token = NULL` and cannot pass the `X-Device-Token` gate; pair them again via `POST /devices/pair` to mint a token.
-- The `require_device_token` dependency exists but is not yet wired into `/agent/audio` or `/devices/{code}/*`. Wiring is intentional follow-up work to avoid breaking the existing 256 tests in this phase. Add `dependencies=[Depends(require_device_token)]` to those routes when ESP firmware is ready.
+- The device-token gate is wired for audio upload and cached TTS fetches. Local dev can keep `REQUIRE_DEVICE_TOKEN=false`; internet-facing deployments should keep it enabled and send `X-Device-Token` from ESP firmware.
 - Login rate-limit state is in-memory and per-process; restarts reset the counter. Acceptable for single-instance MVP.
 
 ## Caveats
@@ -152,5 +152,5 @@ Both paths require physically updating the SD card. There is no on-device rotate
 
 ## Recommended next phase
 
-- **Phase 12-frontend** — implement `/login`, `/observability` (live tail + drill-down + device grid), and "Pair New Device" modal.
+- **Phase 13 frontend** — completed `/login`, `/observability` (live tail + drill-down + device grid), and "Pair New Device" modal.
 - **Phase 11c** — ESP firmware bringup against the new pair flow + token gate. Brief at `docs/phase-12/ESP_BRIEF.md`.

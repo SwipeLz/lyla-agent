@@ -126,7 +126,7 @@ Frontend setup (one-time):
 ```powershell
 cd frontend
 npm install
-# Set VITE_API_BASE_URL=http://127.0.0.1:8765 in frontend/.env
+# Set VITE_API_BASE_URL=http://localhost:8765 in frontend/.env when opening Vite at http://localhost:5173
 # Set VITE_DEMO_USER_ID + VITE_DEMO_DEVICE_ID dari output seed_dev
 ```
 
@@ -143,7 +143,7 @@ Open browser:
 3. Username `admin` / password `admin` → submit → redirect `/app`
 4. Click "Devices" → "Pair Device Baru" → input nama → Generate → config_json muncul → Salin
 5. Click "Observability" → live tail polling tiap 3s
-6. Trigger backend: `curl -X POST http://127.0.0.1:8765/agent/text -H "Content-Type: application/json" -d '{"user_id":"<demo_user>","text":"halo"}'` (atau via Agent Command box di Dashboard)
+6. Trigger backend: `curl -X POST http://localhost:8765/agent/text -H "Content-Type: application/json" -d '{"user_id":"<demo_user>","text":"halo"}'` (atau via Agent Command box di Dashboard)
 7. Lihat row baru muncul di live tail dalam 3 detik
 8. Click row → drawer drill-down dengan stage timing bar
 9. Click logout di pojok kanan navbar → cookie cleared → redirect `/`
@@ -154,5 +154,5 @@ Open browser:
 |---|---|---|
 | Frontend build | `cd frontend; npm run build` | exit 0, 77 modules |
 | Backend regression | `python -m pytest -q` | 310 passed |
-| No legacy refs | `findstr /S "X-Dashboard-Token" frontend\src` | no matches |
+| No legacy refs | `findstr /S "X-Dashboard-Token VITE_DASHBOARD_TOKEN" frontend\src` | no matches |
 

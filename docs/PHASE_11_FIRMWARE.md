@@ -1,5 +1,12 @@
 # Phase 11 — Firmware Architecture (ESP32-S3)
 
+> **SUPERSEDED IN PART by [`ESP32_INTEGRATION_CONTRACT.md`](ESP32_INTEGRATION_CONTRACT.md).**
+> Where this document and the Contract disagree, the Contract wins.
+> See [`ESP32_INTEGRATION_ADR.md`](ESP32_INTEGRATION_ADR.md) for the rationale
+> behind each resolution. This file is preserved for historical context and for
+> sections (hardware pinout, WAV header layout, SD layout) that the Contract
+> cross-references.
+
 This document specifies what the **ESP32-S3 firmware** must build to talk to the FastAPI backend. Read [`PHASE_11_ARCHITECTURE.md`](PHASE_11_ARCHITECTURE.md) first for the protocol contract.
 
 ## Hardware assumed
@@ -331,7 +338,18 @@ For battery-powered builds, defer deep sleep to Phase 12. v1 assumes USB power.
 }
 ```
 
+> **STALE — see [`ESP32_INTEGRATION_CONTRACT.md`](ESP32_INTEGRATION_CONTRACT.md) §2.3.**
+> Phase 12 made `device_token` **required** and the schema moved to a structured
+> `wifi: {ssid, password}` object. The example above is preserved for historical
+> context only. Use the Contract schema in real provisioning.
+
 `device_token` is reserved for future hardware-auth (Phase 13+); leave empty.
+
+> **STALE — superseded by Phase 12.** `device_token` is **mandatory and
+> enforced** by `app/api/_auth_dependencies.require_device_token` when
+> `REQUIRE_DEVICE_TOKEN=true` (default in production). Get the value from
+> `POST /devices/pair`. Authoritative reference:
+> [`ESP32_INTEGRATION_CONTRACT.md`](ESP32_INTEGRATION_CONTRACT.md) §3.
 
 The user runs `python -m scripts.seed_dev` once on the backend, copies the printed UUIDs into this JSON, and writes the JSON to the SD card via PC. Firmware never modifies this file.
 
@@ -355,6 +373,11 @@ Pop SD card → mount on PC → drop new WAV → reinsert. Firmware reads from S
 For OTA audio updates: defer to Phase 13. Don't over-engineer.
 
 ## Security considerations
+
+> **STALE — superseded by Phase 12 + Contract §3, §13.** The bullets below
+> reflect Phase 11's pre-auth posture and are kept for historical context only.
+> Current contract: HTTPS via `WiFiClientSecure.setInsecure()` is the MVP
+> default for internet-facing deployments, and `device_token` is enforced.
 
 - **HTTP not HTTPS** in v1 because cert handling on ESP32 is annoying. WiFi must be trusted (LAN only). For production deploy: switch to HTTPS, embed CA bundle in PROGMEM.
 - `device_token` not enforced server-side yet; Phase 11 ships without auth. Phase 13 adds it.

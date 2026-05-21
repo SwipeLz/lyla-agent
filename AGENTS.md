@@ -46,6 +46,12 @@ never touches it.
 
 ## Where the canonical decisions live
 
+- `docs/ESP32_INTEGRATION_CONTRACT.md` — **NORMATIVE ground truth for
+  ESP32-S3 firmware ↔ backend integration.** Read this first for any
+  firmware work, AWS deployment question, or contract change. Wins over
+  every Phase 11 / Phase 12 doc on conflict.
+- `docs/ESP32_INTEGRATION_ADR.md` — decision log behind the Contract;
+  read this when a Contract decision surprises you.
 - `.kiro/specs/agent-runtime-and-apis/` — Phase 4–8 (current).
 - `.kiro/specs/service-layer/` — Phase 3.
 - `.kiro/specs/phase-8-5-integration-smoke-test/` — **Phase 8.5 (in-flight)**.
@@ -58,7 +64,8 @@ never touches it.
 - `docs/SMOKE_TEST.md` — Phase 8.5 smoke-test runbook.
 - `docs/PHASE_12_SUMMARY.md` — Phase 12 (observability + auth) shipped artifacts.
 - `docs/phase-12/BACKEND_BRIEF.md` — Phase 12 backend brief.
-- `docs/phase-12/ESP_BRIEF.md` — Phase 12 ESP firmware brief.
+- `docs/phase-12/ESP_BRIEF.md` — Phase 12 ESP firmware brief (superseded
+  in part by the Contract above).
 - `docs/PHASE_13_SUMMARY.md` — Phase 13 (frontend BMO redesign) shipped artifacts.
 - `docs/phase-13/FRONTEND_BRIEF.md` — Phase 13 frontend brief.
 

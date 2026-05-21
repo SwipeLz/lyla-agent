@@ -1,5 +1,14 @@
 # Phase 11 — Backend Architecture (FastAPI)
 
+> **HISTORICAL — work described below is SHIPPED.** Phase 11a (real Gemini
+> STT/TTS) and Phase 11b (TTS cache, directive classifier, `X-Lyla-Protocol`
+> header, `AgentInvocation`) are complete. See `docs/ROADMAP.md` for the
+> shipped status and `docs/PHASE_12_SUMMARY.md` for what landed on top.
+> The current source of truth for ESP integration is
+> [`ESP32_INTEGRATION_CONTRACT.md`](ESP32_INTEGRATION_CONTRACT.md).
+> This document is preserved for the design rationale, layer-placement
+> rules, and failure-semantics tables that remain valid.
+
 This document specifies what the **FastAPI backend** must build for ESP32 voice integration. Read [`PHASE_11_ARCHITECTURE.md`](PHASE_11_ARCHITECTURE.md) first for the contract; this file is the implementation guide.
 
 ## What's already built (Phase 10)

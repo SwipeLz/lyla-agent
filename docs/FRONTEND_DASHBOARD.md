@@ -79,10 +79,9 @@ Copy `.env.example` to `.env` and fill in values from
 
 | Key | Required | Purpose |
 |---|---|---|
-| `VITE_API_BASE_URL` | **yes** | Origin of FastAPI. Must match the port uvicorn was started with (e.g. `http://127.0.0.1:8765`). |
+| `VITE_API_BASE_URL` | **yes** | Origin of FastAPI. Must match the browser origin style and backend port (for Vite at `http://localhost:5173`, use `http://localhost:8765`). |
 | `VITE_DEMO_USER_ID` | **yes** | UUID printed by seed script. SPA refuses to call the API until this is set. |
 | `VITE_DEMO_DEVICE_ID` | optional | UUID for demo device. Without it, AgentCommandBox warns and skips device feedback. |
-| `VITE_DASHBOARD_TOKEN` | optional | Set only when backend uses `DASHBOARD_AUTH_MODE=shared_header`. Sent as `X-Dashboard-Token` header. |
 
 ## Running locally
 
@@ -105,7 +104,7 @@ npm run dev
 ```
 
 Open <http://localhost:5173>. The frontend issues calls directly to
-`VITE_API_BASE_URL` (e.g. `http://127.0.0.1:8765`); FastAPI's
+`VITE_API_BASE_URL` (e.g. `http://localhost:8765`); FastAPI's
 `CORSMiddleware` (registered in `app/main.py`) responds to preflight
 requests so the dashboard works without a reverse proxy.
 

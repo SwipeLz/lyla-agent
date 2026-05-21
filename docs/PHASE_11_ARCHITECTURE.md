@@ -1,5 +1,12 @@
 # Phase 11 — End-to-End Architecture (ESP32 Voice Integration)
 
+> **SUPERSEDED IN PART by [`ESP32_INTEGRATION_CONTRACT.md`](ESP32_INTEGRATION_CONTRACT.md).**
+> Where this document and the Contract disagree, the Contract wins.
+> The frozen `audio_code` enum, `face` enum, response shape, and `X-Lyla-Protocol: 1`
+> header are still authoritative here and are imported by the Contract.
+> See [`ESP32_INTEGRATION_ADR.md`](ESP32_INTEGRATION_ADR.md) for resolutions of
+> ambiguities (especially `base_url` HTTP vs HTTPS and `fetch_url` construction).
+
 This document is the **canonical end-to-end blueprint** for the ESP32 ↔ FastAPI ↔ Gemini integration. It freezes contracts so the backend team and the firmware team can work in parallel without breaking each other.
 
 For implementation specifics see:
@@ -159,6 +166,11 @@ Other server values: ESP firmware falls back to `neutral`.
 - Phase 10: always `null`.
 - Phase 11: relative path `/agent/audio/{voice_command_log_id}/tts` when `audio_code == "fallback_tts"`.
 - ESP firmware appends to `VITE_API_BASE_URL` (or its hardcoded base) and issues `GET`.
+
+> **STALE — superseded by [`ESP32_INTEGRATION_CONTRACT.md`](ESP32_INTEGRATION_CONTRACT.md) §7.4 + ADR-10.**
+> The firmware does NOT use `VITE_API_BASE_URL` (that is a frontend env). It
+> reads `base_url` from `/sd/config.json` and constructs the request as
+> `base_url + directive.fetch_url`, verbatim.
 - Returns `audio/wav` (16-bit PCM 24 kHz mono); chunked transfer encoding allowed.
 
 ## Audio retention
