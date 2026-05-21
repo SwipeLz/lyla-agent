@@ -513,6 +513,8 @@ void update_offline_inputs() {
   update_look();
 }
 
+namespace { void update_transition(); }
+
 void render_frame() {
   unsigned long now = millis();
   float t = (float)now;
