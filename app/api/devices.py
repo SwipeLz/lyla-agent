@@ -36,10 +36,10 @@ Implementation notes:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api._auth_dependencies import require_session
+from app.api._auth_dependencies import require_device_token, require_session
 from app.config import settings
 from app.db import get_db
 from app.models.constants import DeviceCommandStatus, DeviceStatus
@@ -57,25 +57,6 @@ from app.services.exceptions import NotFoundError, ValidationError
 from app.utils.timezone import now_utc
 
 router = APIRouter(tags=["Devices"])
-
-
-def require_device_token(
-    x_device_token: str | None = Header(default=None, alias="X-Device-Token"),
-) -> None:
-    """Dependency that enforces the ``X-Device-Token`` header.
-
-    Returns ``None`` on success; raises ``HTTPException(401)`` otherwise.
-
-    The check fails closed when ``settings.device_api_token`` is empty so that
-    a misconfigured deployment cannot accidentally accept arbitrary clients.
-    The header value is never logged or echoed back to the caller.
-    """
-    expected = settings.device_api_token
-    if not expected or x_device_token != expected:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Unauthorized",
-        )
 
 
 @router.get(

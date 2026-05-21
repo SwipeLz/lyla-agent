@@ -72,6 +72,7 @@ def _seed(db) -> tuple[User, Device, DeviceCommand]:
         device_code=f"dev-{uuid4()}",
         name="Bench device",
         status=DeviceStatus.OFFLINE,
+        api_token=VALID_TOKEN,
     )
     db.add(device)
     db.commit()
@@ -140,6 +141,7 @@ def client(db_session, monkeypatch):
 
     app.dependency_overrides[get_db] = _override_get_db
     monkeypatch.setattr(settings, "device_api_token", VALID_TOKEN)
+    monkeypatch.setattr(settings, "require_device_token", True)
     try:
         with TestClient(app) as test_client:
             yield test_client
@@ -383,6 +385,11 @@ def test_property_da2_unknown_device_code_returns_404(
 
     Validates: Requirement 9.3
     """
+    db_session.query(DeviceCommand).delete()
+    db_session.query(Device).delete()
+    db_session.query(User).delete()
+    db_session.commit()
+
     _, _, cmd = _seed(db_session)
 
     snapshot_before = _snapshot_rows(db_session)
@@ -458,6 +465,7 @@ def _seed_user_device(db) -> tuple[User, Device]:
         device_code=f"dev-{uuid4()}",
         name="Bench device",
         status=DeviceStatus.OFFLINE,
+        api_token=VALID_TOKEN,
     )
     db.add(device)
     db.commit()
@@ -646,12 +654,14 @@ def _seed_two_devices_with_commands(
         device_code=f"dev-a-{uuid4()}",
         name="Device A",
         status=DeviceStatus.OFFLINE,
+        api_token=VALID_TOKEN,
     )
     device_b = Device(
         user_id=user.id,
         device_code=f"dev-b-{uuid4()}",
         name="Device B",
         status=DeviceStatus.OFFLINE,
+        api_token=VALID_TOKEN + "_b",
     )
     db.add_all([device_a, device_b])
     db.commit()
@@ -959,6 +969,7 @@ def test_property_da5_status_update_validation(
         device_code=f"dev-{uuid4()}",
         name="Bench device",
         status=DeviceStatus.OFFLINE,
+        api_token=VALID_TOKEN,
     )
     db_session.add(device)
     db_session.commit()
@@ -1056,6 +1067,7 @@ def test_da5_concrete_examples(
         device_code=f"dev-{uuid4()}",
         name="Bench device",
         status=DeviceStatus.OFFLINE,
+        api_token=VALID_TOKEN,
     )
     db_session.add(device)
     db_session.commit()
