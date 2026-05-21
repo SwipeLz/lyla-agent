@@ -31,8 +31,10 @@ export default defineConfig({
         strictPort: false,
         proxy: {
             "/agent": proxyConfig,
+            "/auth": proxyConfig,
             "/dashboard": proxyConfig,
             "/devices": proxyConfig,
+            "/observability": proxyConfig,
             "/healthz": proxyConfig,
         },
     },

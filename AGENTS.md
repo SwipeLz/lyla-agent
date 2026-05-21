@@ -206,8 +206,8 @@ uvicorn app.main:app --reload
 ```
 
 Then:
-- Swagger UI: <http://localhost:8000/docs>
-- Health: <http://localhost:8000/healthz>
+- Swagger UI: <http://localhost:8765/docs>
+- Health: <http://localhost:8765/healthz>
 - Main agent endpoint: `POST /agent/text`
 
 ### Talk to the production agent
@@ -219,7 +219,7 @@ Three options, all hit real services + DB:
 python -m scripts.run_agent_text "catat tugas matematika besok"
 
 :: B) cURL
-curl -X POST http://localhost:8000/agent/text ^
+curl -X POST http://localhost:8765/agent/text ^
   -H "Content-Type: application/json" ^
   -d "{\"user_id\":\"<uuid>\",\"device_id\":\"<uuid>\",\"text\":\"...\"}"
 

@@ -36,7 +36,7 @@ $env:AGENT_MODE="fake"; python -m scripts.run_agent_text "..."
 
 - **`run_agent_text`** prints a JSON `{reply, actions, device_feedback, status}` line to stdout. Empty/whitespace text exits non-zero with a usage message on stderr.
 - **`seed_dev`** is idempotent enough for dev — re-running creates a fresh demo set; don't rely on stable IDs across runs.
-- **`smoke_test_backend`** assumes uvicorn is already running on `localhost:8000`.
+- **`smoke_test_backend`** assumes uvicorn is already running on `localhost:8765`.
 
 ## ANTI-PATTERNS
 
