@@ -40,7 +40,7 @@ ConfigLoadOutcome fail(ConfigLoadResult code, const String& detail) {
 
 ConfigLoadOutcome load_device_config(DeviceConfig& out) {
   SD_MMC.setPins(LYLA_SD_CLK, LYLA_SD_CMD, LYLA_SD_D0);
-  if (!SD_MMC.begin("/sdcard", true, false, BOARD_MAX_SDMMC_FREQ, 5)) {
+  if (!SD_MMC.begin("/sdcard", true)) {
     return fail(ConfigLoadResult::SDMountFailed, "");
   }
 
