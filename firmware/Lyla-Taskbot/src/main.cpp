@@ -108,8 +108,17 @@ void halt_with_message(const char* line1, const char* line2) {
 
 enum class BtnEdge : uint8_t { None, Pressed, Released };
 
+bool sample_button_pressed_majority() {
+  int low_count = 0;
+  for (int i = 0; i < 5; ++i) {
+    if (digitalRead(LYLA_PTT_PIN) == LOW) low_count++;
+    delayMicroseconds(120);
+  }
+  return low_count >= 3;
+}
+
 BtnEdge poll_button_edge() {
-  bool raw = (digitalRead(LYLA_PTT_PIN) == LOW);
+  bool raw = sample_button_pressed_majority();
   unsigned long now = millis();
 
   if (now - g_btn_last_flap_log_ms >= 1000) {

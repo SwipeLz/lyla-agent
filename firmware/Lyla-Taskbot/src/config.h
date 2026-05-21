@@ -72,7 +72,7 @@
 // 7. Audio buffer ceilings (Contract §14.1)
 // 30 s record cap = 30 * 16000 samples * 2 bytes = 960000 bytes.
 #define LYLA_MAX_RECORD_MS         30000
-#define LYLA_MIN_RECORD_MS           300
+#define LYLA_MIN_RECORD_MS           100
 #define LYLA_MAX_RECORD_BYTES   (LYLA_MAX_RECORD_MS * (LYLA_MIC_SAMPLE_RATE / 1000) * 2)
 
 // 12 s TTS playback cap at 24 kHz mono = 576000 bytes.
