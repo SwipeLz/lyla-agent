@@ -38,7 +38,9 @@ constexpr unsigned long kSatisfiedHoldMs = 1400;
 bool g_btn_stable_pressed = false;
 bool g_btn_last_raw = false;
 unsigned long g_btn_last_change_ms = 0;
-constexpr unsigned long kButtonDebounceMs = 25;
+constexpr unsigned long kButtonDebounceMs = 80;
+unsigned long g_btn_flap_count = 0;
+unsigned long g_btn_last_flap_log_ms = 0;
 
 unsigned long g_last_frame_at = 0;
 
@@ -109,7 +111,20 @@ enum class BtnEdge : uint8_t { None, Pressed, Released };
 BtnEdge poll_button_edge() {
   bool raw = (digitalRead(LYLA_PTT_PIN) == LOW);
   unsigned long now = millis();
+
+  if (now - g_btn_last_flap_log_ms >= 1000) {
+    if (g_btn_flap_count > 0) {
+      LYLA_WARN("PTT raw flapped %lux in 1s (stable=%s); check wiring/noise",
+                g_btn_flap_count, g_btn_stable_pressed ? "PRESS" : "REL");
+    }
+    g_btn_flap_count = 0;
+    g_btn_last_flap_log_ms = now;
+  }
+
   if (raw != g_btn_last_raw) {
+    if ((now - g_btn_last_change_ms) < kButtonDebounceMs) {
+      g_btn_flap_count++;
+    }
     g_btn_last_raw = raw;
     g_btn_last_change_ms = now;
     return BtnEdge::None;
