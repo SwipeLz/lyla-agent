@@ -180,6 +180,12 @@ void online_loop(unsigned long now) {
       if (t < g_record_started_at) break;
       uint32_t dur = (uint32_t)(t - g_record_started_at);
 
+      uint16_t peak = audio_capture_last_peak();
+      bool in_priming = (dur < LYLA_VAD_PRIMING_MS);
+      if (in_priming || peak >= LYLA_VAD_THRESHOLD) {
+        g_record_last_voice_at = t;
+      }
+
       bool finish = false;
       const char* finish_reason = nullptr;
 
@@ -189,14 +195,10 @@ void online_loop(unsigned long now) {
       } else if (dur >= LYLA_MAX_RECORD_MS) {
         finish = true;
         finish_reason = "max duration";
-      } else if (dur >= LYLA_VAD_PRIMING_MS) {
-        uint16_t peak = audio_capture_last_peak();
-        if (peak >= LYLA_VAD_THRESHOLD) {
-          g_record_last_voice_at = now;
-        } else if (now - g_record_last_voice_at >= LYLA_VAD_SILENCE_MS) {
-          finish = true;
-          finish_reason = "silence";
-        }
+      } else if (!in_priming &&
+                 t - g_record_last_voice_at >= LYLA_VAD_SILENCE_MS) {
+        finish = true;
+        finish_reason = "silence";
       }
 
       if (finish) {
