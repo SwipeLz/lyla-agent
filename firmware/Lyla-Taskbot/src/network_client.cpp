@@ -260,6 +260,9 @@ AudioPostResult network_post_audio(const DeviceConfig& cfg,
   http.addHeader("User-Agent", LYLA_USER_AGENT);
   http.addHeader("Accept", "application/json");
 
+  static const char* kCollectKeys[] = {"X-Lyla-Protocol"};
+  http.collectHeaders(kCollectKeys, 1);
+
   int code = http.POST(body, total_size);
   result.http_status = code;
   if (code > 0) {
@@ -302,6 +305,9 @@ TtsFetchResult network_get_tts(const DeviceConfig& cfg, const String& fetch_url)
   http.addHeader("X-Device-Token", cfg.device_token);
   http.addHeader("User-Agent", LYLA_USER_AGENT);
   http.addHeader("Accept", "audio/wav");
+
+  static const char* kCollectKeys[] = {"X-Lyla-Protocol"};
+  http.collectHeaders(kCollectKeys, 1);
 
   int code = http.GET();
   result.http_status = code;

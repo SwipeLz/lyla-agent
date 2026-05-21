@@ -176,7 +176,9 @@ void online_loop(unsigned long now) {
     }
     case OnlineState::Recording: {
       bool ok = audio_capture_pump();
-      uint32_t dur = (uint32_t)(now - g_record_started_at);
+      unsigned long t = millis();
+      if (t < g_record_started_at) break;
+      uint32_t dur = (uint32_t)(t - g_record_started_at);
 
       bool finish = false;
       const char* finish_reason = nullptr;
