@@ -175,13 +175,15 @@ After=network.target
 User=ubuntu
 WorkingDirectory=/srv/lyla/app
 EnvironmentFile=/srv/lyla/app/.env
-ExecStart=/srv/lyla/app/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8765 --workers 2
+ExecStart=/srv/lyla/app/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8765 --workers 1
 Restart=on-failure
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+`--workers 1` is intentional. The Phase 12 session store and login rate limiter are in-memory per process (`app/auth/session.py`, `app/api/_rate_limit.py`). Running multiple workers means a login cookie issued by worker A is unknown to worker B, so requests round-robined to the wrong worker fail with "Sesi habis" (401). For the single-user MVP one async worker handles hundreds of concurrent connections — bumping to multiple workers requires moving the session store to Redis or the database first.
 
 Activate:
 

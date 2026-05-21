@@ -170,6 +170,21 @@ In production this is almost always one of:
 2. Frontend served from different origin than API → cookie cross-site. Confirm same-origin via Caddyfile.
 3. Cookie `Domain` mismatch — only happens if user manually set a `domain=` in code. We do not. If it appears, file a bug.
 
+### "Sesi habis. Silakan login ulang." right after login (login itself succeeded)
+
+Symptom: user logs in, gets redirected to dashboard, list views render fine, but the next mutation (`/devices/pair`, etc.) returns 401 within seconds. Often intermittent on refresh.
+
+Root cause: uvicorn running with `--workers > 1`. The Phase 12 session store and rate limiter are in-memory per process (`app/auth/session.py`, `app/api/_rate_limit.py`). Worker A issues the cookie, worker B receives the next request and does not know it.
+
+Fix: edit `/etc/systemd/system/lyla-backend.service`, set `--workers 1` in `ExecStart`, then:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart lyla-backend
+```
+
+Have the user clear the `lyla_session` cookie in DevTools and log in again. Do NOT "fix" by setting `COOKIE_SECURE=false` or by patching `app/auth/session.py` — root cause is workers, not auth code.
+
 ### Login returns 401 with correct password
 
 - `.env` has empty `DASHBOARD_PASSWORD_SCRYPT` → fail-closed. Generate with `python -m scripts.hash_dashboard_password`.
