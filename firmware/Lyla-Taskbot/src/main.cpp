@@ -185,8 +185,9 @@ void setup() {
 
   lyla::clear_status_message();
   lyla::online_init(g_cfg);
-  g_last_button_state = (digitalRead(LYLA_PTT_PIN) == LOW);
-  g_button_changed_at = millis();
+  g_btn_last_raw = (digitalRead(LYLA_PTT_PIN) == LOW);
+  g_btn_stable_pressed = g_btn_last_raw;
+  g_btn_last_change_ms = millis();
   randomSeed((uint32_t)esp_random());
   LYLA_LOG("setup complete; entering main loop");
 }
