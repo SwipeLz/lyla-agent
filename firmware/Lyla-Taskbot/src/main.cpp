@@ -35,10 +35,10 @@ unsigned long g_last_touch_at = 0;
 constexpr unsigned long kTouchDebounceMs = 45;
 constexpr unsigned long kSatisfiedHoldMs = 1400;
 
-bool g_last_button_state = false;
-bool g_last_button_raw = false;
-unsigned long g_button_changed_at = 0;
-constexpr unsigned long kButtonDebounceMs = 30;
+bool g_btn_stable_pressed = false;
+bool g_btn_last_raw = false;
+unsigned long g_btn_last_change_ms = 0;
+constexpr unsigned long kButtonDebounceMs = 25;
 
 unsigned long g_last_frame_at = 0;
 
@@ -104,34 +104,24 @@ void halt_with_message(const char* line1, const char* line2) {
   }
 }
 
-bool poll_button_pressed_edge() {
-  bool raw = (digitalRead(LYLA_PTT_PIN) == LOW);
-  unsigned long now = millis();
-  if (raw != g_last_button_raw) {
-    g_last_button_raw = raw;
-    g_button_changed_at = now;
-  }
-  if ((now - g_button_changed_at) >= kButtonDebounceMs &&
-      raw != g_last_button_state) {
-    g_last_button_state = raw;
-    return raw;
-  }
-  return false;
-}
+enum class BtnEdge : uint8_t { None, Pressed, Released };
 
-bool poll_button_released_edge() {
+BtnEdge poll_button_edge() {
   bool raw = (digitalRead(LYLA_PTT_PIN) == LOW);
   unsigned long now = millis();
-  if (raw != g_last_button_raw) {
-    g_last_button_raw = raw;
-    g_button_changed_at = now;
+  if (raw != g_btn_last_raw) {
+    g_btn_last_raw = raw;
+    g_btn_last_change_ms = now;
+    return BtnEdge::None;
   }
-  if ((now - g_button_changed_at) >= kButtonDebounceMs &&
-      raw != g_last_button_state) {
-    g_last_button_state = raw;
-    return !raw;
+  if ((now - g_btn_last_change_ms) < kButtonDebounceMs) {
+    return BtnEdge::None;
   }
-  return false;
+  if (raw == g_btn_stable_pressed) {
+    return BtnEdge::None;
+  }
+  g_btn_stable_pressed = raw;
+  return raw ? BtnEdge::Pressed : BtnEdge::Released;
 }
 
 }
@@ -220,10 +210,10 @@ void loop() {
 
   lyla::offline_dispatch_inputs(touched, shake_hit);
 
-  if (poll_button_pressed_edge()) {
+  BtnEdge edge = poll_button_edge();
+  if (edge == BtnEdge::Pressed) {
     lyla::online_on_button_pressed();
-  }
-  if (poll_button_released_edge()) {
+  } else if (edge == BtnEdge::Released) {
     lyla::online_on_button_released();
   }
 
