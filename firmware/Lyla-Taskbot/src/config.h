@@ -85,6 +85,18 @@
 #define LYLA_VAD_SILENCE_MS     1500
 #define LYLA_VAD_PRIMING_MS      800
 
+// Set to 0 to disable VAD and record a fixed duration after each tap.
+// Useful for debugging mic capture: a static 10s recording lets you
+// verify whether real audio is captured at all (versus VAD threshold
+// problems). Switch back to 1 once mic is confirmed working.
+#define LYLA_VAD_ENABLED          0
+#define LYLA_FIXED_RECORD_MS  10000
+
+// Periodic peak amplitude log during recording, in milliseconds.
+// Prints "[lyla] mic peak=NNNN at MMMM ms" every interval so you can
+// see if the mic produces signal at all. 0 disables the log.
+#define LYLA_MIC_PEAK_LOG_MS    500
+
 // 12 s TTS playback cap at 24 kHz mono = 576000 bytes.
 #define LYLA_MAX_TTS_BYTES        600000
 #define LYLA_MULTIPART_OVERHEAD_BYTES 2048

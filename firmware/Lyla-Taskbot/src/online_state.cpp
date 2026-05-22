@@ -195,11 +195,19 @@ void online_loop(unsigned long now) {
       } else if (dur >= LYLA_MAX_RECORD_MS) {
         finish = true;
         finish_reason = "max duration";
-      } else if (!in_priming &&
+      }
+#if LYLA_VAD_ENABLED
+      else if (!in_priming &&
                  t - g_record_last_voice_at >= LYLA_VAD_SILENCE_MS) {
         finish = true;
         finish_reason = "silence";
       }
+#else
+      else if (dur >= LYLA_FIXED_RECORD_MS) {
+        finish = true;
+        finish_reason = "fixed duration";
+      }
+#endif
 
       if (finish) {
         audio_capture_stop();
