@@ -146,9 +146,9 @@ async def _run_real(
     intentionally not caught here; the API layer wraps them
     (Requirement 6.6).
     """
-    del timezone  # MVP: not yet threaded through to the agent prompt.
-
     import os
+    from datetime import datetime, timezone as _tz_module
+    from zoneinfo import ZoneInfo
 
     if default_settings.google_api_key and not os.environ.get("GOOGLE_API_KEY"):
         os.environ["GOOGLE_API_KEY"] = default_settings.google_api_key
@@ -157,14 +157,44 @@ async def _run_real(
     from google.adk.sessions import InMemorySessionService
     from google.genai import types
 
-    from app.agent.adk_agent import build_taskbot_agent
+    from app.agent.adk_agent import INSTRUCTION, build_taskbot_agent
 
-    agent = build_taskbot_agent(model=default_settings.google_adk_model, tools=tools)
+    tz_name = timezone or getattr(default_settings, "timezone", "Asia/Jakarta") or "Asia/Jakarta"
+    try:
+        local_tz = ZoneInfo(tz_name)
+    except Exception:
+        local_tz = ZoneInfo("Asia/Jakarta")
+        tz_name = "Asia/Jakarta"
+
+    now_utc_dt = datetime.now(tz=_tz_module.utc)
+    now_local = now_utc_dt.astimezone(local_tz)
+    offset = now_local.utcoffset() or _tz_module.utc.utcoffset(now_local)
+    offset_hours = int(offset.total_seconds() // 3600) if offset else 0
+    offset_label = f"UTC{offset_hours:+d}" if offset_hours else "UTC"
+
+    now_block = (
+        "Konteks waktu untuk percakapan ini (gunakan ini untuk menghitung "
+        "ekspresi waktu relatif seperti 'sekarang', '5 menit lagi', "
+        "'besok jam 9'):\n"
+        f"- Sekarang lokal ({tz_name}, {offset_label}): "
+        f"{now_local.isoformat(timespec='seconds')}\n"
+        f"- Sekarang UTC: {now_utc_dt.isoformat(timespec='seconds')}\n"
+        "Saat memanggil tool yang menerima argumen waktu (deadline_at, "
+        "reminder_at, remind_at, spent_at), kirim string ISO 8601 LENGKAP "
+        "DENGAN OFFSET ZONA WAKTU yang sama dengan 'Sekarang lokal' di atas, "
+        f"misalnya '{now_local.isoformat(timespec='seconds')}'. "
+        "Jangan pernah kirim waktu lebih awal dari 'Sekarang' karena tool "
+        "akan menolak nilai tersebut.\n\n"
+    )
+    instruction = now_block + INSTRUCTION
+
+    agent = build_taskbot_agent(
+        model=default_settings.google_adk_model,
+        tools=tools,
+        instruction=instruction,
+    )
     session_service = InMemorySessionService()
     session_id = str(uuid.uuid4())
-    # ``user_id`` here is the ADK *session-scoped* user identifier, not
-    # our domain user. We use a constant placeholder because per-request
-    # session isolation is provided by the random ``session_id`` above.
     adk_user_id = "taskbot_user"
     await session_service.create_session(
         app_name="taskbot",
@@ -186,8 +216,6 @@ async def _run_real(
         session_id=session_id,
         new_message=new_message,
     ):
-        # Harvest function_response payloads — these ARE our Tool Result
-        # Dicts because the tool callables return dicts directly.
         content = getattr(event, "content", None)
         parts = getattr(content, "parts", None) if content is not None else None
         for part in parts or []:
@@ -198,7 +226,6 @@ async def _run_real(
             if isinstance(response_payload, dict):
                 actions.append(response_payload)
 
-        # Capture the agent's final user-facing text on the terminal event.
         if event.is_final_response():
             if content is not None and parts:
                 final_text = "".join(

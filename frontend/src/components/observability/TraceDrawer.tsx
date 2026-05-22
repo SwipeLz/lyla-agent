@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import * as api from "../../lib/api";
+import { parseIsoUtc } from "../../lib/format";
 import {
   ApiError,
   AuthRequiredError,
@@ -26,9 +27,12 @@ const faceFor = (trace: RequestTrace | null): BmoExpression => {
 
 const fmtTime = (iso: string | null): string => {
   if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("id-ID", { hour12: false });
+  const d = parseIsoUtc(iso);
+  if (!d) return iso;
+  return d.toLocaleString("id-ID", {
+    hour12: false,
+    timeZone: "Asia/Jakarta",
+  });
 };
 
 interface FieldProps {

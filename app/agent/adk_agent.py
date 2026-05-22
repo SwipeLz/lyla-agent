@@ -49,7 +49,12 @@ dalam satuan rupiah penuh, bukan shorthand):
 """
 
 
-def build_taskbot_agent(*, model: str, tools: list[Any]) -> Agent:
+def build_taskbot_agent(
+    *,
+    model: str,
+    tools: list[Any],
+    instruction: str | None = None,
+) -> Agent:
     """Construct the single ``taskbot_agent`` Google ADK agent.
 
     Args:
@@ -61,6 +66,12 @@ def build_taskbot_agent(*, model: str, tools: list[Any]) -> Agent:
             (``create_task``, ``create_expense``, ``set_reminder``,
             ``get_today_summary``, ``send_device_command``); enforcement
             of this invariant lives in the tool factory and its tests.
+        instruction: Optional override for the system instruction. When
+            ``None`` the static ``INSTRUCTION`` constant is used. The
+            runtime injects a per-request "now" block in front of
+            ``INSTRUCTION`` so the LLM can resolve relative phrases like
+            "2 menit lagi" against an actual clock instead of a model-
+            internal guess.
 
     Returns:
         A :class:`google.adk.agents.Agent` instance named
@@ -71,7 +82,7 @@ def build_taskbot_agent(*, model: str, tools: list[Any]) -> Agent:
         name="taskbot_agent",
         model=model,
         description="Asisten Taskbot berbahasa Indonesia.",
-        instruction=INSTRUCTION,
+        instruction=instruction if instruction is not None else INSTRUCTION,
         tools=tools,
     )
 

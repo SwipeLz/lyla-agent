@@ -24,11 +24,14 @@ export const formatCurrencyIDR = (
   return idCurrency.format(value);
 };
 
-const tryDate = (iso: string | null | undefined): Date | null => {
+export const parseIsoUtc = (iso: string | null | undefined): Date | null => {
   if (!iso) return null;
-  const d = new Date(iso);
+  const hasTz = /Z|[+-]\d{2}:?\d{2}$/.test(iso);
+  const d = new Date(hasTz ? iso : `${iso}Z`);
   return Number.isNaN(d.getTime()) ? null : d;
 };
+
+const tryDate = (iso: string | null | undefined): Date | null => parseIsoUtc(iso);
 
 export const formatDateTime = (iso: string | null | undefined): string => {
   const d = tryDate(iso);

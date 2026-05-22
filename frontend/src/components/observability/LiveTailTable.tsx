@@ -1,4 +1,5 @@
 import { RecentLogSummary } from "../../lib/types";
+import { parseIsoUtc } from "../../lib/format";
 import { BmoBadge } from "../bmo/BmoBadge";
 
 interface LiveTailTableProps {
@@ -10,9 +11,12 @@ interface LiveTailTableProps {
 }
 
 const fmtTime = (iso: string): string => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleTimeString("id-ID", { hour12: false });
+  const d = parseIsoUtc(iso);
+  if (!d) return iso;
+  return d.toLocaleTimeString("id-ID", {
+    hour12: false,
+    timeZone: "Asia/Jakarta",
+  });
 };
 
 const fmtMs = (ms: number | null): string => {
