@@ -92,6 +92,12 @@
 #define LYLA_VAD_ENABLED          0
 #define LYLA_FIXED_RECORD_MS  10000
 
+// Set to 1 to bypass mic and fill the record buffer with a 440 Hz sine
+// wave instead. Verifies multipart upload + server-side audio storage
+// independently of mic hardware. Server should hear a clean tone if
+// the upload pipeline is healthy. Restore to 0 once verified.
+#define LYLA_AUDIO_TEST_TONE      0
+
 // Periodic peak amplitude log during recording, in milliseconds.
 // Prints "[lyla] mic peak=NNNN at MMMM ms" every interval so you can
 // see if the mic produces signal at all. 0 disables the log.

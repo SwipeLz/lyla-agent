@@ -2,6 +2,7 @@
 
 #include <driver/i2s.h>
 #include <esp_heap_caps.h>
+#include <math.h>
 
 #include "config.h"
 
@@ -17,6 +18,7 @@ bool g_installed = false;
 uint16_t g_last_peak = 0;
 unsigned long g_last_peak_log_ms = 0;
 uint16_t g_session_max_peak = 0;
+bool g_dumped_raw_head = false;
 
 constexpr size_t kReadChunkSamples = 512;
 
@@ -79,6 +81,7 @@ void audio_capture_start() {
   g_last_peak = 0;
   g_session_max_peak = 0;
   g_last_peak_log_ms = 0;
+  g_dumped_raw_head = false;
   i2s_start(LYLA_MIC_I2S_NUM);
   g_running = true;
 }
@@ -88,6 +91,31 @@ bool audio_capture_pump() {
   if (g_write_offset >= g_capacity_bytes) {
     return false;
   }
+#if LYLA_AUDIO_TEST_TONE
+  static uint32_t tone_phase = 0;
+  size_t samples = kReadChunkSamples;
+  size_t bytes_pending = samples * sizeof(int16_t);
+  if (g_write_offset + bytes_pending > g_capacity_bytes) {
+    samples = (g_capacity_bytes - g_write_offset) / sizeof(int16_t);
+    bytes_pending = samples * sizeof(int16_t);
+  }
+  int16_t* dst = reinterpret_cast<int16_t*>(g_buffer + g_write_offset);
+  uint16_t peak = 0;
+  for (size_t i = 0; i < samples; ++i) {
+    float t = (float)tone_phase / (float)LYLA_MIC_SAMPLE_RATE;
+    float v = sinf(2.0f * (float)M_PI * 440.0f * t) * 8000.0f;
+    int16_t s = (int16_t)v;
+    dst[i] = s;
+    uint16_t a = (uint16_t)(s < 0 ? -s : s);
+    if (a > peak) peak = a;
+    tone_phase++;
+  }
+  g_last_peak = peak;
+  if (peak > g_session_max_peak) g_session_max_peak = peak;
+  delay(20);
+  g_write_offset += bytes_pending;
+  return true;
+#else
   int32_t raw[kReadChunkSamples];
   size_t bytes_read = 0;
   esp_err_t err = i2s_read(LYLA_MIC_I2S_NUM, raw, sizeof(raw), &bytes_read,
@@ -96,6 +124,14 @@ bool audio_capture_pump() {
     return true;
   }
   size_t samples = bytes_read / sizeof(int32_t);
+  if (!g_dumped_raw_head && samples >= 8) {
+    g_dumped_raw_head = true;
+    LYLA_LOG("RAW I2S head: %08lx %08lx %08lx %08lx %08lx %08lx %08lx %08lx",
+             (unsigned long)raw[0], (unsigned long)raw[1],
+             (unsigned long)raw[2], (unsigned long)raw[3],
+             (unsigned long)raw[4], (unsigned long)raw[5],
+             (unsigned long)raw[6], (unsigned long)raw[7]);
+  }
   size_t bytes_pending = samples * sizeof(int16_t);
   if (g_write_offset + bytes_pending > g_capacity_bytes) {
     samples = (g_capacity_bytes - g_write_offset) / sizeof(int16_t);
@@ -125,6 +161,7 @@ bool audio_capture_pump() {
 #endif
   g_write_offset += bytes_pending;
   return true;
+#endif
 }
 
 size_t audio_capture_stop() {
