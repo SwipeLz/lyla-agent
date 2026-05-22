@@ -75,6 +75,14 @@ class Settings(BaseSettings):
     base_url: str = "http://127.0.0.1:8765"
     mvp_user_email: str = "demo@taskbot.local"
 
+    # Phase 11c debugging: persist incoming /agent/audio bytes to disk
+    # under this directory (one .wav per VoiceCommandLog id). Empty
+    # disables persistence (default). Operator-only debug aid; not
+    # part of the user-facing data model. Disk usage grows; rotate or
+    # clean periodically.
+    audio_persist_input_dir: str = ""
+    audio_persist_max_bytes: int = 50_000_000
+
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",

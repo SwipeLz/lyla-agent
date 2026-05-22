@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import time
+from pathlib import Path
 
 from fastapi import (
     APIRouter,
@@ -97,6 +99,15 @@ async def post_agent_audio(
     )
     result = invocation.result
     log_id = invocation.log_id
+
+    if settings.audio_persist_input_dir:
+        try:
+            persist_dir = Path(settings.audio_persist_input_dir)
+            persist_dir.mkdir(parents=True, exist_ok=True)
+            ext = os.path.splitext(metadata.filename or "")[1].lower() or ".wav"
+            (persist_dir / f"{log_id}{ext}").write_bytes(file_bytes)
+        except Exception:  # noqa: BLE001
+            pass
 
     classify_start = time.perf_counter()
     directive = classify_directive(

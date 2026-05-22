@@ -67,6 +67,7 @@ class RequestTrace(BaseModel):
     response_sent_at: Optional[datetime] = None
     stage_timings: StageTimings = StageTimings()
     audio: Optional[TraceAudio] = None
+    audio_url: Optional[str] = None
     transcription: Optional[TraceTranscription] = None
     directive: Optional[TraceDirective] = None
     tts: Optional[TraceTts] = None

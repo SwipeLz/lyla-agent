@@ -192,6 +192,7 @@ export interface RequestTrace {
   response_sent_at: string | null;
   stage_timings: StageTimings;
   audio: TraceAudio | null;
+  audio_url: string | null;
   transcription: TraceTranscription | null;
   directive: TraceDirective | null;
   tts: TraceTts | null;

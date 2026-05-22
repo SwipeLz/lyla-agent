@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import os
 import statistics
 from collections import Counter
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api._auth_dependencies import require_session
+from app.config import settings
 from app.db import get_db
 from app.models.device import Device
 from app.models.voice_command_log import VoiceCommandLog
@@ -80,12 +84,23 @@ def _build_trace(log: VoiceCommandLog) -> RequestTrace:
         response_sent_at=log.response_sent_at,
         stage_timings=_build_stage_timings(metadata),
         audio=TraceAudio(**audio) if audio else None,
+        audio_url=_audio_url_for(log.id),
         transcription=TraceTranscription(**transcription) if transcription else None,
         directive=TraceDirective(**directive) if directive else None,
         tts=TraceTts(**tts) if tts else None,
         client=TraceClient(**client) if client else None,
         error=TraceError(**error) if error else None,
     )
+
+
+def _audio_url_for(log_id: str) -> str | None:
+    if not settings.audio_persist_input_dir:
+        return None
+    persist_dir = Path(settings.audio_persist_input_dir)
+    for ext in (".wav", ".mp3", ".m4a", ".webm"):
+        if (persist_dir / f"{log_id}{ext}").exists():
+            return f"/observability/audio/{log_id}"
+    return None
 
 
 def _total_ms(log: VoiceCommandLog) -> int | None:
@@ -104,6 +119,40 @@ def get_trace(log_id: str, db: Session = Depends(get_db)) -> RequestTrace:
             detail="Log tidak ditemukan",
         )
     return _build_trace(log)
+
+
+@router.get("/audio/{log_id}")
+def get_audio(log_id: str, db: Session = Depends(get_db)) -> FileResponse:
+    if not settings.audio_persist_input_dir:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Audio persistence disabled (set AUDIO_PERSIST_INPUT_DIR).",
+        )
+    log = db.query(VoiceCommandLog).filter(VoiceCommandLog.id == log_id).one_or_none()
+    if log is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Log tidak ditemukan",
+        )
+    persist_dir = Path(settings.audio_persist_input_dir)
+    for ext in (".wav", ".mp3", ".m4a", ".webm"):
+        candidate = persist_dir / f"{log_id}{ext}"
+        if candidate.exists():
+            media_type = {
+                ".wav": "audio/wav",
+                ".mp3": "audio/mpeg",
+                ".m4a": "audio/mp4",
+                ".webm": "audio/webm",
+            }[ext]
+            return FileResponse(
+                path=str(candidate),
+                media_type=media_type,
+                filename=f"{log_id}{ext}",
+            )
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Audio file not persisted for this log_id.",
+    )
 
 
 @router.get("/recent", response_model=list[RecentLogSummary])

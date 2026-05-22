@@ -210,6 +210,29 @@ export function TraceDrawer({ logId, onClose }: TraceDrawerProps) {
                 </p>
               </section>
 
+              {trace.audio_url ? (
+                <section className="space-y-2">
+                  <h3 className="text-sm font-medium text-bmo-dark">
+                    Audio input (debug)
+                  </h3>
+                  <audio
+                    controls
+                    src={trace.audio_url}
+                    className="w-full"
+                    preload="none"
+                  >
+                    Browser tidak mendukung pemutaran audio.
+                  </audio>
+                  <p className="text-xs text-slate-500">
+                    File asli yang dikirim ESP32. Persistensi diaktifkan via{" "}
+                    <code className="rounded bg-surface px-1">
+                      AUDIO_PERSIST_INPUT_DIR
+                    </code>
+                    .
+                  </p>
+                </section>
+              ) : null}
+
               {trace.client ? (
                 <section className="space-y-2">
                   <h3 className="text-sm font-medium text-bmo-dark">
