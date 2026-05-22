@@ -96,7 +96,7 @@
 // wave instead. Verifies multipart upload + server-side audio storage
 // independently of mic hardware. Server should hear a clean tone if
 // the upload pipeline is healthy. Restore to 0 once verified.
-#define LYLA_AUDIO_TEST_TONE      0
+#define LYLA_AUDIO_TEST_TONE      1
 
 // Periodic peak amplitude log during recording, in milliseconds.
 // Prints "[lyla] mic peak=NNNN at MMMM ms" every interval so you can
